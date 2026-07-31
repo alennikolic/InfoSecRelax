@@ -41,6 +41,11 @@ CREATE TABLE organizations (
     updated_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Podrazumevana organizacija za razvojno okruženje, dok ne postoji
+-- prava registracija/prijava firmi. Ista logika je dupliran kao
+-- bezbednosna mreža i u src/config/database.php (ensureDefaultOrganization).
+INSERT INTO organizations (id, name) VALUES (1, 'Moja firma');
+
 CREATE TABLE personnel (
     id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     organization_id     BIGINT UNSIGNED NOT NULL,
