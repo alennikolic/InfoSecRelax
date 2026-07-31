@@ -29,7 +29,7 @@
                         <?= nl2br(htmlspecialchars($requirement['requirement'])) ?>
                     </div>
                     <div class="requirement-meta">
-                        <span class="requirement-status<?= $requirement['addressed_by_isms'] ? ' is-addressed' : ' is-not-addressed' ?>">
+                        <span class="status-badge<?= $requirement['addressed_by_isms'] ? ' is-positive' : ' is-warning' ?>">
                             <?= $requirement['addressed_by_isms'] ? 'Pokriveno ISMS-om' : 'Nije pokriveno ISMS-om' ?>
                         </span>
                         <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj zahtev?');">
