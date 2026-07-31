@@ -164,3 +164,143 @@ body {
     margin: 0 auto;
     line-height: 1.6;
 }
+
+/* --- Uvodni tekst modula --- */
+
+.module-intro {
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin: 0 0 24px;
+    max-width: 640px;
+}
+
+/* --- Poruke o greškama --- */
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.alert p {
+    margin: 0;
+}
+
+.alert p + p {
+    margin-top: 4px;
+}
+
+.alert-error {
+    background: #fdecea;
+    color: #7a2a20;
+    border: 1px solid #f3c6c0;
+}
+
+/* --- Forme --- */
+
+.form-row {
+    margin-bottom: 16px;
+}
+
+.form-row label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.form-row input[type="text"],
+.form-row select,
+.form-row textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--color-text);
+}
+
+.form-row textarea {
+    resize: vertical;
+}
+
+.btn-primary {
+    background: var(--color-accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+.btn-delete {
+    background: none;
+    border: none;
+    color: #a34036;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+/* --- Prikaz faktora konteksta --- */
+
+.factor-form {
+    padding-bottom: 28px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.factor-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+}
+
+.factor-column h3 {
+    font-size: 15px;
+    margin: 0 0 12px;
+}
+
+.factor-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+}
+
+.factor-card p {
+    margin: 6px 0 8px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.factor-category {
+    display: inline-block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.factor-delete-form {
+    margin: 0;
+}
+
+.empty-state {
+    color: var(--color-text-muted);
+    font-size: 14px;
+    font-style: italic;
+}
