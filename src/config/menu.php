@@ -20,6 +20,9 @@
 
 return [
 
+    // --- Pregled sistema (Klauzula 4.4 - sistem kao celina, van grupa) ---
+    ['slug' => 'pregled-sistema',           'title' => 'Pregled sistema',            'iso_ref' => 'Klauzula 4.4',              'group' => null],
+
     // --- Kontekst i obim (Poglavlje 4) ---
     ['slug' => 'kontekst',                 'title' => 'Kontekst organizacije',      'iso_ref' => 'Klauzula 4.1',              'group' => 'Kontekst i obim'],
     ['slug' => 'zainteresovane-strane',    'title' => 'Zainteresovane strane',      'iso_ref' => 'Klauzula 4.2',              'group' => 'Kontekst i obim'],
