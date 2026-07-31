@@ -46,7 +46,7 @@
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="requirement-add-form">
+    <form method="post" class="subform">
         <input type="hidden" name="action" value="add_requirement">
         <input type="hidden" name="interested_party_id" value="<?= (int) $party['id'] ?>">
 
