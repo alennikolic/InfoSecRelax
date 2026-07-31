@@ -215,6 +215,7 @@ body {
 }
 
 .form-row input[type="text"],
+.form-row input[type="date"],
 .form-row select,
 .form-row textarea {
     width: 100%;
@@ -423,7 +424,82 @@ body {
     line-height: 1.5;
 }
 
-.requirement-add-form {
+.subform {
     padding-top: 12px;
     border-top: 1px solid var(--color-border);
+}
+
+.item-title {
+    font-weight: 600;
+}
+
+/* --- Prikaz obima ISMS-a (obim.php) --- */
+
+.scope-current {
+    background: var(--color-accent-soft);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-accent);
+    border-radius: 6px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+}
+
+.scope-current-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.scope-version-badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    background: var(--color-accent);
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.scope-version-badge-muted {
+    background: var(--color-text-muted);
+}
+
+.scope-meta {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.scope-text {
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.scope-new-version {
+    margin-top: 8px;
+}
+
+.scope-new-version h3 {
+    font-size: 15px;
+    margin: 0 0 8px;
+}
+
+.scope-history {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+}
+
+.scope-history-item {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+}
+
+.scope-history-item:last-child {
+    margin-bottom: 0;
 }
