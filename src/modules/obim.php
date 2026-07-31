@@ -229,10 +229,10 @@ $scopeHistory = $historyStmt->fetchAll();
         <div class="scope-current-header">
             <span class="scope-version-badge">Verzija <?= htmlspecialchars($currentScope['version']) ?></span>
             <?php if (!empty($currentScope['effective_from'])): ?>
-                <span class="scope-meta">na snazi od <?= htmlspecialchars($currentScope['effective_from']) ?></span>
+                <span class="item-meta">na snazi od <?= htmlspecialchars($currentScope['effective_from']) ?></span>
             <?php endif; ?>
             <?php if (!empty($currentScope['approved_at'])): ?>
-                <span class="scope-meta">odobreno <?= htmlspecialchars($currentScope['approved_at']) ?></span>
+                <span class="item-meta">odobreno <?= htmlspecialchars($currentScope['approved_at']) ?></span>
             <?php endif; ?>
         </div>
         <p class="scope-text"><?= nl2br(htmlspecialchars($currentScope['scope_text'])) ?></p>
@@ -364,7 +364,7 @@ $scopeHistory = $historyStmt->fetchAll();
             <div class="scope-current-header">
                 <span class="scope-version-badge scope-version-badge-muted">Verzija <?= htmlspecialchars($pastScope['version']) ?></span>
                 <?php if (!empty($pastScope['effective_from'])): ?>
-                    <span class="scope-meta">na snazi od <?= htmlspecialchars($pastScope['effective_from']) ?></span>
+                    <span class="item-meta">na snazi od <?= htmlspecialchars($pastScope['effective_from']) ?></span>
                 <?php endif; ?>
             </div>
             <p class="scope-text"><?= nl2br(htmlspecialchars($pastScope['scope_text'])) ?></p>
