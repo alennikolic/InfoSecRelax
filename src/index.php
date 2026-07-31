@@ -10,6 +10,12 @@
 
 declare(strict_types=1);
 
+// Output buffering omogućava modulima da pozovu header('Location: ...')
+// za redirekciju (npr. posle čuvanja forme) čak i pošto je header.php
+// već ispisao deo HTML-a - ništa se stvarno ne šalje browseru dok se
+// bafer ne isprazni na kraju skripte.
+ob_start();
+
 $menu = require __DIR__ . '/config/menu.php';
 
 // Podrazumevana stranica je prva u meniju - trenutno "kontekst",
