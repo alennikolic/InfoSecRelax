@@ -1,3 +1,5 @@
+/* src/assets/style.css */
+
 /* InfoSecRelax - osnovni layout
    Jednostavna, mirna paleta boja - dosledno sa "bez stresa" pristupom */
 
@@ -9,6 +11,8 @@
     --color-sidebar-text-muted: #7c8aa3;
     --color-accent: #2f6f4f;
     --color-accent-soft: #eaf3ee;
+    --color-warning: #9a6b12;
+    --color-warning-soft: #fbf1de;
     --color-text: #1f2430;
     --color-text-muted: #5b6472;
     --color-border: #e3e6eb;
@@ -226,6 +230,25 @@ body {
     resize: vertical;
 }
 
+.form-row-inline {
+    display: flex;
+    align-items: center;
+}
+
+.form-row-inline label.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 400;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+.form-row-inline .checkbox-label input[type="checkbox"] {
+    width: auto;
+}
+
 .btn-primary {
     background: var(--color-accent);
     color: #ffffff;
@@ -241,6 +264,21 @@ body {
     opacity: 0.9;
 }
 
+.btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    background: var(--color-accent-soft);
+}
+
 .btn-delete {
     background: none;
     border: none;
@@ -251,7 +289,7 @@ body {
     text-decoration: underline;
 }
 
-/* --- Prikaz faktora konteksta --- */
+/* --- Prikaz faktora konteksta (kontekst.php) --- */
 
 .factor-form {
     padding-bottom: 28px;
@@ -303,4 +341,89 @@ body {
     color: var(--color-text-muted);
     font-size: 14px;
     font-style: italic;
+}
+
+/* --- Prikaz zainteresovanih strana (zainteresovane-strane.php) --- */
+
+.party-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+}
+
+.party-card-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.party-name {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.requirement-list {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+}
+
+.requirement-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+
+.requirement-item:last-child {
+    margin-bottom: 0;
+}
+
+.requirement-text {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 6px;
+}
+
+.requirement-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.requirement-status {
+    display: inline-block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.requirement-status.is-addressed {
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+}
+
+.requirement-status.is-not-addressed {
+    color: var(--color-warning);
+    background: var(--color-warning-soft);
+}
+
+.requirement-notes {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin: 8px 0 0;
+    line-height: 1.5;
+}
+
+.requirement-add-form {
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
 }
