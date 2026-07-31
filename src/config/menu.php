@@ -1,5 +1,7 @@
 <?php
 /**
+ * src/config/menu.php
+ *
  * Struktura menija InfoSecRelax aplikacije.
  *
  * Redosled stavki namerno prati redosled uspostavljanja ISO/IEC 27001
@@ -16,6 +18,11 @@
  * Dodavanje nove stavke u meni = dodavanje jednog reda ovde. Ruter u
  * index.php i layout u includes/header.php automatski je prikazuju,
  * bez potrebe za izmenom bilo čega drugog.
+ *
+ * Izuzetak od "redosled prati standard": "zaposleni" nije vezan za
+ * jednu klauzulu, nego je osnovni skup podataka (personnel) od kog
+ * zavisi skoro svaki kasniji modul - zato je uveden odmah pre "uloge",
+ * koja je prvi modul kome zaista treba da bira osobu iz liste.
  */
 
 return [
@@ -30,6 +37,7 @@ return [
 
     // --- Liderstvo (Poglavlje 5) ---
     ['slug' => 'politike',                 'title' => 'Politike bezbednosti',       'iso_ref' => 'Klauzula 5.2 / A.5.1',      'group' => 'Liderstvo'],
+    ['slug' => 'zaposleni',                'title' => 'Zaposleni i saradnici',      'iso_ref' => 'A.6',                       'group' => 'Liderstvo'],
     ['slug' => 'uloge',                    'title' => 'Uloge i odgovornosti',       'iso_ref' => 'Klauzula 5.3 / A.5.2',      'group' => 'Liderstvo'],
 
     // --- Rizik i planiranje (Poglavlje 6) ---
