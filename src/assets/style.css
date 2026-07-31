@@ -346,25 +346,26 @@ body {
 
 /* --- Prikaz zainteresovanih strana (zainteresovane-strane.php) --- */
 
-.party-card {
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
-    border-radius: 6px;
-    padding: 14px 16px;
-    margin-bottom: 14px;
-}
-
-.party-card-header {
+.card-header-row {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 10px;
 }
 
-.party-name {
+.card-title {
     font-size: 15px;
     font-weight: 600;
+}
+
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
 }
 
 .requirement-list {
@@ -466,7 +467,7 @@ body {
     background: var(--color-text-muted);
 }
 
-.scope-meta {
+.item-meta {
     font-size: 12px;
     color: var(--color-text-muted);
 }
