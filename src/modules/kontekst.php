@@ -2,11 +2,10 @@
 /**
  * src/modules/kontekst.php - Klauzula 4.1: Kontekst organizacije.
  *
- * Prvi potpuno funkcionalan modul u aplikaciji, prvi sa pravim
- * uređivanjem (modal, action=update), i prvi sa modalom pomoći koji se
- * čita i uređuje iz baze (help_content, preko includes/help-content.php
- * i includes/help-modal.php - deljeno za sve module koji ga kasnije
- * dobiju, samo se doda action=save_help handler kao ovde ispod).
+ * Prvi potpuno funkcionalan modul u aplikaciji, i prvi sa pravim
+ * uređivanjem (modal, action=update). Modal pomoći ovde je samo
+ * prikaz - uređivanje teksta se radi centralno na
+ * modules/pomoc-uredjivanje.php, ne po svakoj stranici posebno.
  */
 
 declare(strict_types=1);
@@ -90,19 +89,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
 
     $stmt = $pdo->prepare('DELETE FROM context_factors WHERE id = :id AND organization_id = :org_id');
     $stmt->execute(['id' => $id, 'org_id' => $organizationId]);
-
-    header('Location: ?page=kontekst');
-    exit;
-}
-
-// --- Čuvanje sadržaja pomoći (deljena funkcija, isti obrazac za svaki modul) ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_help') {
-    $helpTitle = trim($_POST['help_title'] ?? '');
-    $helpBody  = trim($_POST['help_body'] ?? '');
-
-    if ($helpTitle !== '') {
-        saveHelpContent($pdo, $pageSlug, $helpTitle, $helpBody);
-    }
 
     header('Location: ?page=kontekst');
     exit;
