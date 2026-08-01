@@ -1,11 +1,22 @@
 <?php
 /**
- * modules/kontekst.php - Klauzula 4.1: Kontekst organizacije.
+ * src/modules/kontekst.php - Klauzula 4.1: Kontekst organizacije.
  *
- * Prvi potpuno funkcionalan modul u aplikaciji. Uspostavlja obrazac
- * (forma za dodavanje + prikaz + brisanje, sve nad jednom tabelom) koji
- * će se ponoviti, uz manje izmene, kroz većinu ostalih modula.
+ * Prvi potpuno funkcionalan modul u aplikaciji, i prvi koji dobija
+ * pravu formu za uređivanje (ne samo dodaj/obriši/status) - kroz
+ * modalni prozorčić koji se puni preko JavaScript-a umesto navigacije
+ * na posebnu stranicu. Ista forma (istog ID-a u HTML-u) služi i za
+ * dodavanje i za uređivanje - JS samo menja naslov, vrednost skrivenog
+ * action polja i popunjava/prazni ostala polja pre otvaranja.
+ *
+ * Napomena: kao i svuda u aplikaciji, forma pri grešci validacije ne
+ * pamti prethodno unete vrednosti - kod modala to dodatno znači da se
+ * modal ne otvara automatski nazad, samo se poruka o grešci prikaže na
+ * vrhu stranice. Isti nivo jednostavnosti kao i pre, sada primenjen i
+ * na modal.
  */
+
+declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
 
@@ -37,6 +48,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add')
             'factor_type' => $factorType,
             'description' => $description,
             'category'    => $category !== '' ? $category : null,
+        ]);
+
+        header('Location: ?page=kontekst');
+        exit;
+    }
+}
+
+// --- Ažuriranje postojećeg faktora ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update') {
+    $id          = (int) ($_POST['id'] ?? 0);
+    $factorType  = $_POST['factor_type'] ?? '';
+    $description = trim($_POST['description'] ?? '');
+    $category    = trim($_POST['category'] ?? '');
+
+    if (!in_array($factorType, ['spoljni', 'unutrasnji'], true)) {
+        $errors[] = 'Izaberite da li je faktor spoljni ili unutrašnji.';
+    }
+    if ($description === '') {
+        $errors[] = 'Opis faktora je obavezan.';
+    }
+
+    if (empty($errors)) {
+        $stmt = $pdo->prepare(
+            'UPDATE context_factors
+             SET factor_type = :factor_type, description = :description, category = :category
+             WHERE id = :id AND organization_id = :org_id'
+        );
+        $stmt->execute([
+            'factor_type' => $factorType,
+            'description' => $description,
+            'category'    => $category !== '' ? $category : null,
+            'id'          => $id,
+            'org_id'      => $organizationId,
         ]);
 
         header('Location: ?page=kontekst');
@@ -79,31 +123,7 @@ $internalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_ty
 </div>
 <?php endif; ?>
 
-<form method="post" class="factor-form">
-    <input type="hidden" name="action" value="add">
-
-    <div class="form-row">
-        <label for="factor_type">Vrsta faktora</label>
-        <select name="factor_type" id="factor_type" required>
-            <option value="">Izaberite...</option>
-            <option value="spoljni">Spoljni</option>
-            <option value="unutrasnji">Unutrašnji</option>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="category">Kategorija (opciono)</label>
-        <input type="text" name="category" id="category" placeholder="npr. zakonski, tržište, tehnologija">
-    </div>
-
-    <div class="form-row">
-        <label for="description">Opis faktora</label>
-        <textarea name="description" id="description" rows="3" required
-            placeholder="npr. Zakon o zaštiti podataka o ličnosti zahteva posebnu pažnju pri obradi ličnih podataka klijenata."></textarea>
-    </div>
-
-    <button type="submit" class="btn-primary">Dodaj faktor</button>
-</form>
+<button type="button" class="btn-primary" onclick="openAddFactorModal()">+ Dodaj faktor</button>
 
 <div class="factor-columns">
     <div class="factor-column">
@@ -128,3 +148,74 @@ $internalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_ty
         <?php endif; ?>
     </div>
 </div>
+
+<div class="modal-overlay" id="factor-modal-overlay" onclick="closeFactorModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="factor-modal-title">Dodaj faktor</span>
+            <button type="button" class="modal-close" onclick="closeFactorModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post" id="factor-modal-form">
+            <input type="hidden" name="action" id="factor-modal-action" value="add">
+            <input type="hidden" name="id" id="factor-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_factor_type">Vrsta faktora</label>
+                <select name="factor_type" id="modal_factor_type" required>
+                    <option value="">Izaberite...</option>
+                    <option value="spoljni">Spoljni</option>
+                    <option value="unutrasnji">Unutrašnji</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_category">Kategorija (opciono)</label>
+                <input type="text" name="category" id="modal_category" placeholder="npr. zakonski, tržište, tehnologija">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_description">Opis faktora</label>
+                <textarea name="description" id="modal_description" rows="4" required
+                    placeholder="npr. Zakon o zaštiti podataka o ličnosti zahteva posebnu pažnju pri obradi ličnih podataka klijenata."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeFactorModal()">Otkaži</button>
+                <button type="submit" class="btn-primary">Sačuvaj</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAddFactorModal() {
+    document.getElementById('factor-modal-title').textContent = 'Dodaj faktor';
+    document.getElementById('factor-modal-action').value = 'add';
+    document.getElementById('factor-modal-id').value = '';
+    document.getElementById('modal_factor_type').value = '';
+    document.getElementById('modal_category').value = '';
+    document.getElementById('modal_description').value = '';
+    document.getElementById('factor-modal-overlay').classList.add('is-open');
+}
+
+function openEditFactorModal(factor) {
+    document.getElementById('factor-modal-title').textContent = 'Uredi faktor';
+    document.getElementById('factor-modal-action').value = 'update';
+    document.getElementById('factor-modal-id').value = factor.id;
+    document.getElementById('modal_factor_type').value = factor.factor_type;
+    document.getElementById('modal_category').value = factor.category;
+    document.getElementById('modal_description').value = factor.description;
+    document.getElementById('factor-modal-overlay').classList.add('is-open');
+}
+
+function closeFactorModal() {
+    document.getElementById('factor-modal-overlay').classList.remove('is-open');
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeFactorModal();
+    }
+});
+</script>
