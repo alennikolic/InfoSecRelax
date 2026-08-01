@@ -32,8 +32,7 @@ $helpBody  = $helpContent['body'] ?? '';
             <div class="help-content"><?= $helpBody ?></div>
         <?php endif; ?>
 
-        <div class="modal-actions modal-actions-split">
-            <a class="soa-edit-link" href="?page=pomoc-uredjivanje&slug=<?= htmlspecialchars($pageSlug) ?>">Uredi ovu pomoć</a>
+        <div class="modal-actions">
             <button type="button" class="btn-primary" onclick="closeHelpModal()">Zatvori</button>
         </div>
     </div>
