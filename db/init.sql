@@ -892,3 +892,37 @@ CREATE TABLE IF NOT EXISTS isms_resources (
     INDEX idx_resources_org (organization_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='Klauzula 7.1 - resursi obezbedjeni za ISMS.';
+
+-- db/migrations/002_add_continuity_plans.sql
+--
+-- Dodaje tabelu za A.5.29 (bezbednost informacija tokom poremećaja) i
+-- A.5.30 (spremnost IKT sistema za kontinuitet poslovanja) - plan
+-- odgovora po scenariju prekida, sa istorijom poslednjeg testiranja.
+--
+-- PRIMENA NA POSTOJEĆU BAZU (bez gubitka podataka):
+--
+--   docker exec -i InfoSecRelax_db mysql \
+--       -u infosecrelax_user -pinfosecrelax_password infosecrelax \
+--       < db/migrations/002_add_continuity_plans.sql
+--
+-- ZA BUDUĆE SVEŽE INSTALACIJE: prekopirati CREATE TABLE blok ispod na
+-- kraj db/init.sql, pre "-- Kraj šeme" komentara (isti princip kao
+-- 001_add_isms_resources.sql).
+--
+-- IF NOT EXISTS čini ovaj fajl bezbednim za slučajno ponovno pokretanje.
+
+CREATE TABLE IF NOT EXISTS continuity_plans (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_id     BIGINT UNSIGNED NOT NULL,
+    scenario            VARCHAR(255) NOT NULL COMMENT 'npr. Nestanak struje, Pad glavnog servera',
+    plan_description    TEXT NOT NULL,
+    owner_id            BIGINT UNSIGNED NULL,
+    last_tested_at      DATE NULL,
+    test_result         ENUM('uspesno','delimicno_uspesno','neuspesno','nije_testirano') NOT NULL DEFAULT 'nije_testirano',
+    next_test_due       DATE NULL,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES personnel(id) ON DELETE SET NULL,
+    INDEX idx_continuity_org (organization_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='A.5.29-5.30 - planovi kontinuiteta poslovanja po scenariju prekida.';
