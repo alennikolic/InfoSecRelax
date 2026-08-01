@@ -218,6 +218,7 @@ body {
 
 .form-row input[type="text"],
 .form-row input[type="date"],
+.form-row input[type="number"],
 .form-row select,
 .form-row textarea {
     width: 100%;
@@ -236,6 +237,16 @@ body {
 .form-row-inline {
     display: flex;
     align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.form-row-inline label {
+    margin-bottom: 0;
+}
+
+.form-row-inline select {
+    width: auto;
 }
 
 .form-row-inline label.checkbox-label {
@@ -244,7 +255,6 @@ body {
     gap: 8px;
     font-size: 13px;
     font-weight: 400;
-    margin-bottom: 0;
     cursor: pointer;
 }
 
