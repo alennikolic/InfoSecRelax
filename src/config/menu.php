@@ -53,6 +53,7 @@ return [
     ['slug' => 'promene',                  'title' => 'Planiranje promena',         'iso_ref' => 'Klauzula 6.3',              'group' => 'Rizik i planiranje'],
 
     // --- Podrška (Poglavlje 7) ---
+    ['slug' => 'resursi',                  'title' => 'Resursi',                    'iso_ref' => 'Klauzula 7.1',              'group' => 'Podrška'],
     ['slug' => 'kompetentnost',            'title' => 'Kompetentnost i obuka',      'iso_ref' => 'Klauzula 7.2-7.3',          'group' => 'Podrška'],
     ['slug' => 'komunikacija',             'title' => 'Komunikacija',               'iso_ref' => 'Klauzula 7.4',              'group' => 'Podrška'],
     ['slug' => 'dokumenti',                'title' => 'Dokumenti',                  'iso_ref' => 'Klauzula 7.5',              'group' => 'Podrška'],
