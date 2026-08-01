@@ -122,11 +122,6 @@ $internalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_ty
 $helpContent = getHelpContent($pdo, $pageSlug);
 ?>
 
-<p class="module-intro">
-    Klauzula 4.1 traži da identifikujete spoljne i unutrašnje faktore koji utiču na vašu firmu
-    i na to da li će sistem bezbednosti informacija zaista postići svoju svrhu.
-</p>
-
 <?php if (!empty($errors)): ?>
 <div class="alert alert-error">
     <?php foreach ($errors as $error): ?>
@@ -135,7 +130,7 @@ $helpContent = getHelpContent($pdo, $pageSlug);
 </div>
 <?php endif; ?>
 
-<div class="card-actions">
+<div class="toolbar">
     <button type="button" class="btn-primary" onclick="openAddFactorModal()">+ Dodaj faktor</button>
     <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
 </div>
@@ -195,9 +190,12 @@ $helpContent = getHelpContent($pdo, $pageSlug);
                     placeholder="npr. Zakon o zaštiti podataka o ličnosti zahteva posebnu pažnju pri obradi ličnih podataka klijenata."></textarea>
             </div>
 
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeFactorModal()">Otkaži</button>
-                <button type="submit" class="btn-primary">Sačuvaj</button>
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromFactorModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeFactorModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
             </div>
         </form>
     </div>
@@ -228,6 +226,11 @@ function openEditFactorModal(factor) {
 
 function closeFactorModal() {
     document.getElementById('factor-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromFactorModal() {
+    closeFactorModal();
+    openHelpModal();
 }
 
 document.addEventListener('keydown', function (event) {
