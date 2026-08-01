@@ -1,3 +1,5 @@
+# docker-compose.yml
+
 services:
   db:
     image: mysql:8.0
@@ -28,6 +30,11 @@ services:
       - "8090:80"
     volumes:
       - ./src:/var/www/html
+      # Read-only pristup db/ folderu - potreban je dugmetu za uvoz demo
+      # podataka na pregled-sistema.php da može da pročita db/demo-data.sql.
+      # Fajl mora biti dostupan PHP-u da bi ga izvršio; nema drugog razloga
+      # da web kontejner uopšte "vidi" ovaj folder van ovoga.
+      - ./db:/var/www/db:ro
     depends_on:
       - db
 
