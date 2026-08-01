@@ -2,26 +2,22 @@
 /**
  * src/modules/kontekst.php - Klauzula 4.1: Kontekst organizacije.
  *
- * Prvi potpuno funkcionalan modul u aplikaciji, i prvi koji dobija
- * pravu formu za uređivanje (ne samo dodaj/obriši/status) - kroz
- * modalni prozorčić koji se puni preko JavaScript-a umesto navigacije
- * na posebnu stranicu. Ista forma (istog ID-a u HTML-u) služi i za
- * dodavanje i za uređivanje - JS samo menja naslov, vrednost skrivenog
- * action polja i popunjava/prazni ostala polja pre otvaranja.
- *
- * Napomena: kao i svuda u aplikaciji, forma pri grešci validacije ne
- * pamti prethodno unete vrednosti - kod modala to dodatno znači da se
- * modal ne otvara automatski nazad, samo se poruka o grešci prikaže na
- * vrhu stranice. Isti nivo jednostavnosti kao i pre, sada primenjen i
- * na modal.
+ * Prvi potpuno funkcionalan modul u aplikaciji, prvi sa pravim
+ * uređivanjem (modal, action=update), i prvi sa modalom pomoći koji se
+ * čita i uređuje iz baze (help_content, preko includes/help-content.php
+ * i includes/help-modal.php - deljeno za sve module koji ga kasnije
+ * dobiju, samo se doda action=save_help handler kao ovde ispod).
  */
 
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../includes/help-content.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
+
+$pageSlug = 'kontekst';
 
 $errors = [];
 
@@ -99,6 +95,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delet
     exit;
 }
 
+// --- Čuvanje sadržaja pomoći (deljena funkcija, isti obrazac za svaki modul) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_help') {
+    $helpTitle = trim($_POST['help_title'] ?? '');
+    $helpBody  = trim($_POST['help_body'] ?? '');
+
+    if ($helpTitle !== '') {
+        saveHelpContent($pdo, $pageSlug, $helpTitle, $helpBody);
+    }
+
+    header('Location: ?page=kontekst');
+    exit;
+}
+
 // --- Učitavanje postojećih faktora ---
 $stmt = $pdo->prepare(
     'SELECT * FROM context_factors WHERE organization_id = :org_id ORDER BY created_at DESC'
@@ -108,6 +117,9 @@ $allFactors = $stmt->fetchAll();
 
 $externalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_type'] === 'spoljni');
 $internalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_type'] === 'unutrasnji');
+
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
 ?>
 
 <p class="module-intro">
@@ -123,7 +135,10 @@ $internalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_ty
 </div>
 <?php endif; ?>
 
-<button type="button" class="btn-primary" onclick="openAddFactorModal()">+ Dodaj faktor</button>
+<div class="card-actions">
+    <button type="button" class="btn-primary" onclick="openAddFactorModal()">+ Dodaj faktor</button>
+    <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+</div>
 
 <div class="factor-columns">
     <div class="factor-column">
@@ -187,6 +202,8 @@ $internalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_ty
         </form>
     </div>
 </div>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
 
 <script>
 function openAddFactorModal() {
