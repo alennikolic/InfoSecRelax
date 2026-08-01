@@ -947,3 +947,58 @@ CREATE TABLE IF NOT EXISTS compliance_items (
     INDEX idx_compliance_org (organization_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='A.5.31-5.36 - registar uskladjenosti po kontroli.';
+-- Dodaje tabelu za sadržaj pomoći po stranici - nezavisno od
+-- organization_id, jer je isti tekst za sve (objašnjava standard, ne
+-- podatke konkretne firme). Zato ova tabela namerno NIJE deo
+-- demo-data.sql niti se briše pri uvozu demo podataka - sadržaj pomoći
+-- treba da preživi bez obzira na to koliko puta se demo podaci uvezu.
+--
+-- Sadržaj se čuva kao sirov HTML (ne čist tekst) da bi mogao da nosi
+-- naslove, liste i linkove ka spoljnim izvorima - uređuje se direktno
+-- kroz modal na svakoj stranici (dugme "Uredi" unutar prozorčića
+-- pomoći), ne kroz poseban administratorski ekran.
+ 
+CREATE TABLE IF NOT EXISTS help_content (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    page_slug   VARCHAR(100) NOT NULL,
+    title       VARCHAR(255) NOT NULL,
+    body        TEXT NOT NULL,
+    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_help_content_slug (page_slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Sadrzaj pomoci po stranici - deljen za sve organizacije, uredjuje se kroz modal na samoj stranici.';
+ 
+-- Seed za kontekst.php - prva stranica koja dobija pomoć, ujedno i
+-- primer kako izgleda popunjen sadržaj (može se slobodno prepraviti
+-- kroz dugme "Uredi" u samom modalu).
+INSERT IGNORE INTO help_content (page_slug, title, body) VALUES (
+    'kontekst',
+    'Pomoć — Kontekst organizacije',
+    '<p>Klauzula 4.1 traži da firma identifikuje spoljne i unutrašnje faktore koji mogu uticati na to da li će sistem bezbednosti informacija (ISMS) zaista postići svoju svrhu. Ovo nije formalnost - na ovome počiva sve što dolazi kasnije: obim ISMS-a, procena rizika, pa i sami ciljevi bezbednosti.</p>
+ 
+<h4>Spoljni faktori</h4>
+<p>Sve ono što dolazi izvan firme, na šta firma nema direktan uticaj, ali mora da se prilagodi. Obično su to:</p>
+<ul>
+<li><strong>Zakonski i regulatorni</strong> - npr. zakon o zaštiti podataka o ličnosti, propisi za vašu delatnost.</li>
+<li><strong>Tržišni</strong> - npr. zahtevi klijenata za sertifikatom, konkurencija koja već ima ISO 27001.</li>
+<li><strong>Tehnološki</strong> - npr. novi tipovi napada relevantni za vašu delatnost, promene kod dobavljača softvera.</li>
+<li><strong>Ekonomski i društveni</strong> - npr. rast cena IT usluga, promena navika korisnika (rad od kuće).</li>
+</ul>
+ 
+<h4>Unutrašnji faktori</h4>
+<p>Sve ono što je deo same firme - njena struktura, kultura, resursi, tehnologija koju koristi. Primeri:</p>
+<ul>
+<li><strong>Organizacioni</strong> - npr. broj zaposlenih, način rada (hibridno, na daljinu), ograničeni IT resursi.</li>
+<li><strong>Tehnološki</strong> - npr. koji sistemi se koriste, da li su u cloud-u ili lokalno.</li>
+<li><strong>Ljudski</strong> - npr. nivo IT pismenosti zaposlenih, fluktuacija kadra.</li>
+</ul>
+ 
+<h4>Nekoliko saveta</h4>
+<ul>
+<li>Faktor ne mora biti savršeno formulisan da bi bio koristan - bolje ga uneti kratko i vratiti se kasnije nego čekati "idealnu" rečenicu.</li>
+<li>Nije potrebno nabrojati baš sve što postoji - fokusirajte se na ono što stvarno utiče na zaštitu informacija.</li>
+<li>Ovaj spisak nije zauvek - vredi ga pregledati kad se nešto značajno promeni (novi zakon, novi sistem, veći rast firme).</li>
+<li>Ovde možeš dodati i linkove ka spoljnim vodičima ili tekstu standarda koje tvoj tim koristi kao referencu.</li>
+</ul>'
+);
+ 
