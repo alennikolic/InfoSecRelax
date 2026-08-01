@@ -37,7 +37,7 @@ Poznata ograničenja, namerno ostavljena za kasnije:
 ## Pokretanje
 
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
 Aplikacija je dostupna na `http://localhost:8090`, MySQL na portu `3307`
@@ -73,23 +73,6 @@ InfoSecRelax/
     └── assets/
         └── style.css
 ```
-
-## Primena migracija na postojeću bazu
-
-`db/init.sql` se pokreće **samo jednom**, kad je Docker volume prazan
-(`docker-entrypoint-initdb.d` ponašanje). Ako već imaš pokrenutu bazu sa
-podacima, nove tabele treba primeniti ručno, jednu po jednu, bez gubitka
-postojećih podataka:
-
-```bash
-docker exec -i InfoSecRelax_db mysql -u infosecrelax_user -pinfosecrelax_password infosecrelax < db/migrations/001_add_isms_resources.sql
-docker exec -i InfoSecRelax_db mysql -u infosecrelax_user -pinfosecrelax_password infosecrelax < db/migrations/002_add_continuity_plans.sql
-docker exec -i InfoSecRelax_db mysql -u infosecrelax_user -pinfosecrelax_password infosecrelax < db/migrations/003_add_compliance_items.sql
-```
-
-Za buduće **sveže** instalacije, sadržaj svake migracije treba prekopirati na
-kraj `db/init.sql` (pre `-- Kraj šeme` komentara) - namerno nije urađeno
-automatski, da se izbegne rizik greške pri prepisivanju celog fajla.
 
 ## Pregled modula
 
