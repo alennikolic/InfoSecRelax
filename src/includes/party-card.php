@@ -3,20 +3,31 @@
  * src/includes/party-card.php - prikaz jedne zainteresovane strane sa
  * njenim zahtevima.
  *
- * Očekuje da su $party (red iz interested_parties) i $requirements
+ * Očekuje da je $party (red iz interested_parties) i $requirements
  * (niz redova iz interested_party_requirements za tu stranu, može biti
  * prazan niz) već postavljeni pre uključivanja ovog fajla - deli scope
  * sa foreach petljom iz koje se poziva, isto kao includes/factor-card.php.
+ *
+ * "Uredi" menja samo naziv i vrstu strane (kroz zainteresovane-strane.php
+ * modal) - zahtevi ostaju dodaj/obriši, nemaju svoje uređivanje još.
  */
 ?>
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($party['name']) ?></span>
-        <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovu zainteresovanu stranu i sve njene zahteve?');">
-            <input type="hidden" name="action" value="delete_party">
-            <input type="hidden" name="id" value="<?= (int) $party['id'] ?>">
-            <button type="submit" class="btn-delete">Obriši stranu</button>
-        </form>
+        <div class="button-group">
+            <button type="button" class="btn-secondary"
+                onclick='openEditPartyModal(<?= json_encode([
+                    "id"         => (int) $party["id"],
+                    "name"       => $party["name"],
+                    "party_type" => $party["party_type"],
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+            <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovu zainteresovanu stranu i sve njene zahteve?');">
+                <input type="hidden" name="action" value="delete_party">
+                <input type="hidden" name="id" value="<?= (int) $party['id'] ?>">
+                <button type="submit" class="btn-delete">Obriši stranu</button>
+            </form>
+        </div>
     </div>
 
     <?php if (empty($requirements)): ?>
