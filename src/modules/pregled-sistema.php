@@ -181,7 +181,7 @@ foreach ($menu as $item) {
 
 <?php foreach ($groupedMenu as $groupName => $items): ?>
     <h3 class="section-heading"><?= htmlspecialchars($groupName ?? 'Ostalo') ?></h3>
-    <table class="soa-table">
+    <table class="soa-table dashboard-table">
         <thead>
             <tr>
                 <th>Modul</th>
