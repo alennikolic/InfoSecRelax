@@ -719,3 +719,42 @@ body {
     gap: 8px;
     margin-top: 16px;
 }
+
+.modal-box-wide {
+    max-width: 640px;
+}
+
+.help-content h4 {
+    font-size: 14px;
+    margin: 20px 0 8px;
+}
+
+.help-content h4:first-child {
+    margin-top: 0;
+}
+
+.help-content p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-text);
+    margin: 0 0 12px;
+}
+
+.help-content ul {
+    margin: 0 0 12px;
+    padding-left: 20px;
+}
+
+.help-content li {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 6px;
+}
+
+.help-content strong {
+    font-weight: 600;
+}
+
+.is-hidden {
+    display: none;
+}
