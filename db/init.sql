@@ -892,18 +892,10 @@ CREATE TABLE IF NOT EXISTS isms_resources (
     INDEX idx_resources_org (organization_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='Klauzula 7.1 - resursi obezbedjeni za ISMS.';
-
--- db/migrations/002_add_continuity_plans.sql
 --
 -- Dodaje tabelu za A.5.29 (bezbednost informacija tokom poremećaja) i
 -- A.5.30 (spremnost IKT sistema za kontinuitet poslovanja) - plan
 -- odgovora po scenariju prekida, sa istorijom poslednjeg testiranja.
---
--- PRIMENA NA POSTOJEĆU BAZU (bez gubitka podataka):
---
---   docker exec -i InfoSecRelax_db mysql \
---       -u infosecrelax_user -pinfosecrelax_password infosecrelax \
---       < db/migrations/002_add_continuity_plans.sql
 --
 -- ZA BUDUĆE SVEŽE INSTALACIJE: prekopirati CREATE TABLE blok ispod na
 -- kraj db/init.sql, pre "-- Kraj šeme" komentara (isti princip kao
@@ -926,3 +918,32 @@ CREATE TABLE IF NOT EXISTS continuity_plans (
     INDEX idx_continuity_org (organization_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 COMMENT='A.5.29-5.30 - planovi kontinuiteta poslovanja po scenariju prekida.';
+--
+-- Dodaje tabelu za A.5.31-5.36 (Usklađenost) - jedan registar za svih
+-- šest kontrola (pravni zahtevi, intelektualna svojina, zaštita
+-- zapisa, privatnost, nezavisna provera, usklađenost sa politikama),
+-- razlikovanih preko control_ref.
+--
+-- Postojeća legal_requirements tabela (koja pokriva samo A.5.31)
+-- ostaje u šemi neiskorišćena - ista situacija kao equipment,
+-- storage_media i slične tabele bez svoje stavke menija. Jedan
+-- dosledan registar za svih šest kontrola je jednostavniji za
+-- održavanje od dva paralelna mehanizma.
+-- IF NOT EXISTS čini ovaj fajl bezbednim za slučajno ponovno pokretanje.
+
+CREATE TABLE IF NOT EXISTS compliance_items (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_id     BIGINT UNSIGNED NOT NULL,
+    control_ref         ENUM('5.31','5.32','5.33','5.34','5.35','5.36') NOT NULL,
+    title               VARCHAR(255) NOT NULL,
+    description         TEXT NULL,
+    status              ENUM('usaglaseno','delimicno','neusaglaseno','nije_primenjivo') NOT NULL DEFAULT 'delimicno',
+    owner_id            BIGINT UNSIGNED NULL,
+    last_reviewed_at    DATE NULL,
+    next_review_due     DATE NULL,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES personnel(id) ON DELETE SET NULL,
+    INDEX idx_compliance_org (organization_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='A.5.31-5.36 - registar uskladjenosti po kontroli.';
