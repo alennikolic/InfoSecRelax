@@ -971,11 +971,20 @@ COMMENT='Sadrzaj pomoci po stranici - deljen za sve organizacije, uredjuje se kr
 -- Seed za kontekst.php - prva stranica koja dobija pomoć, ujedno i
 -- primer kako izgleda popunjen sadržaj (može se slobodno prepraviti
 -- kroz dugme "Uredi" u samom modalu).
-INSERT IGNORE INTO help_content (page_slug, title, body) VALUES (
+-- db/migrations/help_content_full_insert.sql
+--
+-- Kompletan INSERT za help_content (svih 28 stranica), spojen iz
+-- migracija 004+005+006 - zalepi umesto postojeceg (samo kontekst)
+-- INSERT-a na kraju tvog init.sql fajla. Pretpostavlja da CREATE TABLE
+-- help_content vec postoji (iz migracije 004).
+--
+
+INSERT IGNORE INTO help_content (page_slug, title, body) VALUES
+(
     'kontekst',
     'Pomoć — Kontekst organizacije',
     '<p>Klauzula 4.1 traži da firma identifikuje spoljne i unutrašnje faktore koji mogu uticati na to da li će sistem bezbednosti informacija (ISMS) zaista postići svoju svrhu. Ovo nije formalnost - na ovome počiva sve što dolazi kasnije: obim ISMS-a, procena rizika, pa i sami ciljevi bezbednosti.</p>
- 
+
 <h4>Spoljni faktori</h4>
 <p>Sve ono što dolazi izvan firme, na šta firma nema direktan uticaj, ali mora da se prilagodi. Obično su to:</p>
 <ul>
@@ -984,7 +993,7 @@ INSERT IGNORE INTO help_content (page_slug, title, body) VALUES (
 <li><strong>Tehnološki</strong> - npr. novi tipovi napada relevantni za vašu delatnost, promene kod dobavljača softvera.</li>
 <li><strong>Ekonomski i društveni</strong> - npr. rast cena IT usluga, promena navika korisnika (rad od kuće).</li>
 </ul>
- 
+
 <h4>Unutrašnji faktori</h4>
 <p>Sve ono što je deo same firme - njena struktura, kultura, resursi, tehnologija koju koristi. Primeri:</p>
 <ul>
@@ -992,7 +1001,7 @@ INSERT IGNORE INTO help_content (page_slug, title, body) VALUES (
 <li><strong>Tehnološki</strong> - npr. koji sistemi se koriste, da li su u cloud-u ili lokalno.</li>
 <li><strong>Ljudski</strong> - npr. nivo IT pismenosti zaposlenih, fluktuacija kadra.</li>
 </ul>
- 
+
 <h4>Nekoliko saveta</h4>
 <ul>
 <li>Faktor ne mora biti savršeno formulisan da bi bio koristan - bolje ga uneti kratko i vratiti se kasnije nego čekati "idealnu" rečenicu.</li>
@@ -1000,5 +1009,194 @@ INSERT IGNORE INTO help_content (page_slug, title, body) VALUES (
 <li>Ovaj spisak nije zauvek - vredi ga pregledati kad se nešto značajno promeni (novi zakon, novi sistem, veći rast firme).</li>
 <li>Ovde možeš dodati i linkove ka spoljnim vodičima ili tekstu standarda koje tvoj tim koristi kao referencu.</li>
 </ul>'
-);
+),
+(
+    'zainteresovane-strane',
+    'Pomoć — Zainteresovane strane',
+    '<p>Klauzula 4.2 traži da identifikujete zainteresovane strane relevantne za sistem bezbednosti informacija, njihove zahteve, i da odredite koji od tih zahteva će biti pokriveni kroz sam ISMS. Ovo direktno utiče na obim ISMS-a (Klauzula 4.3) - ono što neka strana očekuje od vas često postaje deo onoga što ISMS treba da pokrije.</p>
+
+<h4>Interne strane</h4>
+<p>Grupe unutar same firme čija očekivanja utiču na bezbednost informacija:</p>
+<ul>
+<li>Zaposleni - očekuju jasne procedure i obuku.</li>
+<li>Rukovodstvo - očekuje da mere ne usporavaju svakodnevni rad.</li>
+<li>Vlasnici/osnivači - očekuju zaštitu poslovne vrednosti firme.</li>
+</ul>
+
+<h4>Eksterne strane</h4>
+<p>Sve van firme čiji zahtevi i očekivanja utiču na to kako gradite ISMS:</p>
+<ul>
+<li>Klijenti - očekuju zaštitu svojih podataka.</li>
+<li>Regulatorna tela (npr. Poreska uprava) - imaju zakonske zahteve.</li>
+<li>Dobavljači i partneri (banke, cloud provajderi) - imaju svoje ugovorne zahteve.</li>
+</ul>
+
+<h4>"Pokriveno kroz ISMS" - Da ili Ne?</h4>
+<p>Nije svaki zahtev nešto što ISMS treba da reši. Na primer, zahtev Poreske uprave za tačnošću prijava jeste realan i važan, ali nije bezbednosni zahtev - obeležite ga sa "Ne" i to je u redu. Ono što ISMS treba da pokrije su zahtevi koji se tiču poverljivosti, integriteta ili dostupnosti informacija.</p>
+
+<h4>Savet</h4>
+<p>Za svaku stranu zapišite konkretan zahtev, ne opštu izjavu. "Klijenti očekuju bezbednost" je preopšte - bolje je "Klijenti očekuju da im se lični podaci ne dele sa trećim licima bez pristanka."</p>'
+),
+('pregled-sistema', 'Pomoć — Pregled sistema',
+'<p>Klauzula 4.4 traži da se ISMS uspostavi, primeni, održava i stalno unapređuje kao celina - sistem procesa koji međusobno deluju, ne skup nepovezanih dokumenata. Ova stranica daje presek celog sistema na jednom mestu.</p>
+<h4>Kako čitati brojke</h4>
+<p>Brojke na vrhu (aktivni zaposleni, rizici, otvoreni incidenti, popunjenost Izjave o primenljivosti) su brz signal stanja - ne moraju biti "savršene", ali vredi ih pratiti kroz vreme.</p>
+<h4>Tabele po grupi</h4>
+<p>Klik na naziv bilo kog modula vodi direktno na tu stranicu. Broj u koloni "Broj unosa" pokazuje koliko je stavki uneto - prazna kolona znači da taj deo ISMS-a još čeka popunjavanje.</p>'),
+('obim', 'Pomoć — Obim ISMS-a',
+'<p>Klauzula 4.3 traži da se, na osnovu konteksta (4.1) i zahteva zainteresovanih strana (4.2), odredi tačan obim ISMS-a - koji delovi organizacije su unutar njega, a koji su izričito isključeni i zašto.</p>
+<h4>Šta ide u tekst obima</h4>
+<p>Kratak, jasan opis: koje lokacije, sistemi i procesi su pokriveni. Ne mora biti dugačak - bolji je precizan i tačan nego opširan.</p>
+<h4>Izuzeci moraju imati obrazloženje</h4>
+<p>Nije dovoljno reći "X nije uključeno" - mora se objasniti zašto (npr. "van kontrole firme", "ne obrađuje podatke klijenata").</p>
+<h4>Verzionisanje</h4>
+<p>Nova verzija ne briše staru - stara ostaje u istoriji sa svojim tadašnjim izuzecima, tačno kakva je bila važeća u tom trenutku. To je sam trag audita kroz vreme.</p>'),
+('liderstvo', 'Pomoć — Liderstvo i posvećenost',
+'<p>Klauzula 5.1 traži da top menadžment demonstrira liderstvo i posvećenost ISMS-u. Ova stranica nema svoju tabelu - sažima dokaze te posvećenosti iz drugih delova aplikacije.</p>
+<h4>Šta pokazuju brojke</h4>
+<p>Broj održanih pregleda menadžmenta, ostvareni ciljevi, uloge sa stvarnim ovlašćenjem, i otvorene radnje iz pregleda - sve su to konkretni tragovi da se rukovodstvo aktivno bavi ISMS-om, ne samo formalno.</p>
+<h4>Kako popraviti slabe brojke</h4>
+<p>Ako je nešto prazno ili nisko - održi pregled menadžmenta, odobri opštu politiku, dodeli jasno ovlašćenje ulogama na stranici "Uloge i odgovornosti".</p>'),
+('politike', 'Pomoć — Politike bezbednosti',
+'<p>Klauzula 5.2 traži opštu politiku bezbednosti informacija, a A.5.1 tematske politike za konkretne oblasti (kontrola pristupa, rad na daljinu, backup...). Obe su dokumenti sa svojom istorijom verzija.</p>
+<h4>Opšta vs tematska</h4>
+<p>Opšta politika je jedna, krovna - postavlja ton i osnovna pravila. Tematske pokrivaju konkretne oblasti detaljnije, po potrebi.</p>
+<h4>Odobrenje i potvrde</h4>
+<p>Datum odobrenja i ko je odobrio pokazuju da je rukovodstvo stalo iza politike. Potvrde zaposlenih pokazuju da su je pročitali i razumeli - ne moraju svi potvrditi odmah, ali vredi pratiti napredak.</p>'),
+('zaposleni', 'Pomoć — Zaposleni i saradnici',
+'<p>Osnovna evidencija svih koji rade za firmu - zaposlenih, honorarnih saradnika i spoljnih dobavljača. Ova lista se koristi kroz skoro sve ostale module (vlasnik sredstva, nosilac uloge, odobravalac dokumenta...).</p>
+<h4>Deaktiviraj, ne Obriši</h4>
+<p>Kad neko ode iz firme, koristi "Deaktiviraj" - to čuva istoriju (ko je nekad imao pristup čemu) i koristi se za pokazatelj vremena ukidanja pristupa. "Obriši" je samo za ispravku pogrešnog unosa, jer trajno briše i sve povezane zapise (pristupe, obuke, provere).</p>'),
+('uloge', 'Pomoć — Uloge i odgovornosti',
+'<p>Klauzula 5.3 traži da se uloge i odgovornosti relevantne za bezbednost informacija dodele i jasno saopšte.</p>
+<h4>Ovlašćenje je ključno</h4>
+<p>Odgovornost bez ovlašćenja je nepotpuna - ako neko treba da bude odgovoran za nešto, mora imati i stvarnu moć da donosi odluke u tom domenu. Polje "Nivo ovlašćenja" je zato podjednako važno kao i sam opis uloge.</p>
+<h4>Primeri uloga</h4>
+<p>Koordinator ISMS-a, vlasnik konkretnog sredstva ili rizika, administrator sistema, zamenik za slučaj odsustva.</p>'),
+('sredstva', 'Pomoć — Popis sredstava',
+'<p>A.5.9 traži popis informacija i sredstava koja im služe kao podrška. Ovaj popis je polazna tačka za procenu rizika - svaki rizik će se kasnije vezivati za konkretno sredstvo.</p>
+<h4>Vrste sredstava</h4>
+<p>Informacija (baze podataka, dokumenti), hardver (laptopovi, serveri), softver, usluga (nalozi, pretplate), ili ljudi (tim koji ima pristup nečemu osetljivom).</p>
+<h4>Klasifikacija i vlasnik</h4>
+<p>Klasifikacija (javno do strogo poverljivo) pokazuje koliko pažnje sredstvo zahteva. Svako sredstvo treba vlasnika - osobu koja odlučuje ko ima pristup.</p>'),
+('procena-rizika', 'Pomoć — Procena rizika',
+'<p>Klauzula 6.1.2 traži metodologiju procene rizika, 6.1.3 tretman za svaki identifikovani rizik. Oba koraka su na ovoj stranici.</p>
+<h4>Kriterijumi prvo</h4>
+<p>Pre unosa rizika, podesi skalu verovatnoće i uticaja i pragove za nizak/srednji/visok. Ako kasnije promeniš pragove, svi već uneti rizici se automatski preračunaju.</p>
+<h4>Verovatnoća × uticaj = skor</h4>
+<p>Rizik se ocenjuje po dve ose - koliko je verovatno da se desi, i koliko bi bio ozbiljan uticaj ako se desi. Proizvod ta dva broja daje nivo rizika.</p>
+<h4>Mere tretmana</h4>
+<p>Za svaki rizik bira se jedan od četiri pristupa: smanjiti (najčešće), izbeći, preneti (npr. na osiguranje ili dobavljača), ili prihvatiti (svesna odluka da se ništa ne preduzima).</p>'),
+('izjava-primenljivosti', 'Pomoć — Izjava o primenljivosti',
+'<p>Klauzula 6.1.3(d) traži da se za svaku od 93 kontrole Aneksa A odluči da li je primenljiva i obrazloži zašto - u oba slučaja, uključena ili isključena.</p>
+<h4>Obrazloženje je uvek obavezno</h4>
+<p>Čak i kad kontrola NIJE primenljiva (npr. kontrole razvoja softvera za firmu koja ne razvija sopstveni softver), mora postojati kratko obrazloženje zašto - "nije primenljivo" samo po sebi nije dovoljno za sertifikacioni audit.</p>
+<h4>Status implementacije</h4>
+<p>Nije dovoljno reći da je kontrola primenljiva - treba pratiti i da li je stvarno sprovedena (nije započeto / u toku / implementirano).</p>
+<h4>Snalaženje kroz spisak</h4>
+<p>Kontrole su grupisane po temi (A.5 organizacione, A.6 ljudske, A.7 fizičke, A.8 tehnološke) - lakše je proći kroz jednu temu odjednom nego skakati nasumično.</p>'),
+('ciljevi', 'Pomoć — Ciljevi bezbednosti',
+'<p>Klauzula 6.2 traži merljive ciljeve bezbednosti informacija, usklađene sa politikom, i plan njihovog ostvarenja.</p>
+<h4>Pet pitanja plana</h4>
+<p>Za svaki cilj treba odgovoriti: šta će biti urađeno, koji resursi su potrebni, ko je odgovoran, do kada, i kako će se meriti uspeh. Svih pet polja postoji u formi baš zato.</p>
+<h4>Praćenje statusa</h4>
+<p>Cilj prolazi kroz planiran → u toku → ostvaren (ili neostvaren, ako se pokaže da nije bio realan). Redovno ažuriranje statusa je bolji pokazatelj posvećenosti nego samo dodavanje novih ciljeva.</p>'),
+('promene', 'Pomoć — Planiranje promena',
+'<p>Klauzula 6.3 traži da se promene koje utiču na ISMS planiraju kontrolisano - ne samo sprovedu bez razmišljanja o posledicama.</p>
+<h4>Tri plana uz svaku promenu</h4>
+<p>Procena uticaja (na obim, rizike, dokumentaciju), plan testiranja (kako proveriti da promena radi pre punog uvođenja), i plan povratka na prethodno stanje ako nešto pođe po zlu.</p>
+<h4>Namerna vs nenamerna promena</h4>
+<p>Većina promena je planirana unapred - ali ponekad se nešto promeni bez najave (npr. dobavljač izmeni uslove korišćenja). Takve promene se i dalje beleže ovde, samo se obeleže kao "nenamerne", radi potpune slike.</p>'),
+('resursi', 'Pomoć — Resursi',
+'<p>Klauzula 7.1 traži da se odrede i obezbede resursi potrebni za uspostavljanje, primenu, održavanje i stalno unapređenje ISMS-a.</p>
+<h4>Vrste resursa</h4>
+<p>Budžet, osoblje (npr. vreme administratora sistema), alati i licence, obuka, ili infrastruktura (oprema, serveri). Ne mora sve biti novac - vreme ljudi je isto tako realan resurs.</p>
+<h4>Praćenje statusa</h4>
+<p>Planirano → obezbeđeno → u korišćenju - pokazuje da li je nešto samo obećano na papiru ili zaista stiglo do svakodnevnog rada.</p>'),
+('kompetentnost', 'Pomoć — Kompetentnost i obuka',
+'<p>Klauzula 7.2 traži da se obezbedi kompetentnost ljudi čiji rad utiče na bezbednost informacija, a 7.3 svest i obuku o tome.</p>
+<h4>Zapisi o kompetentnosti</h4>
+<p>Za svaku osobu: koja kompetencija je potrebna, da li postoji nedostatak, šta je preduzeto da se nedostatak otkloni, i da li je ta mera zaista bila efikasna - ne dovoljno je samo poslati nekoga na obuku, treba proveriti da li je pomoglo.</p>
+<h4>Obuke i prisustvo</h4>
+<p>Svaka obuka beleži ko je stvarno prisustvovao. Obavezne obuke (npr. o prepoznavanju phishing napada) vredi ponavljati periodično, ne samo jednom pri zapošljavanju.</p>'),
+('komunikacija', 'Pomoć — Komunikacija',
+'<p>Klauzula 7.4 traži da se odredi šta treba komunicirati, kome, kada i kako - unutar firme i prema spoljnim stranama.</p>
+<h4>Četiri pitanja</h4>
+<p>Šta se komunicira (npr. obaveštenje o održavanju sistema), kome (ciljna publika), kada (okidač - npr. "3 dana pre"), i kako (kanal - e-mail, sastanak, interni chat).</p>
+<h4>Ne zaboravi eksterne strane</h4>
+<p>Lako je misliti samo na internu komunikaciju - ali klijenti, regulatori i dobavljači takođe ponekad treba da budu obavešteni o promenama koje ih se tiču.</p>'),
+('dokumenti', 'Pomoć — Dokumenti',
+'<p>Klauzula 7.5 traži kontrolu dokumentovanih informacija - jasno ko je vlasnik, ko odobrava, kada se dokument ponovo pregleda, i istoriju izmena kroz verzije.</p>
+<h4>Vrste dokumenata</h4>
+<p>Politika, procedura, registar ili zapisnik - klasifikacija (javno do strogo poverljivo) pokazuje koliko pažnje dokument zahteva pri deljenju.</p>
+<h4>Verzije i pregled</h4>
+<p>Svaka nova verzija se beleži uz kratak opis šta je izmenjeno - to je istorija na koju se oslanjate kad neko pita "zašto smo ovo promenili". Datum sledećeg pregleda pomaže da se dokumenti ne "zaborave" na godinama.</p>'),
+('sistemi-pristup', 'Pomoć — Sistemi i pristup',
+'<p>Klauzula 8.1 i A.8.2-8.5 traže popis sistema i kontrolu ko ima pristup čemu - posebno privilegovan pristup, koji uvek treba posebno opravdanje.</p>
+<h4>Standardni vs privilegovan</h4>
+<p>Većina ljudi treba standardni pristup - dovoljan za svakodnevni rad. Privilegovan (administratorski) pristup treba da ima što manje ljudi, i uvek sa jasnim razlogom.</p>
+<h4>Ukidanje pristupa</h4>
+<p>"Ukini pristup" čuva istoriju (kad je i zašto ukinut) - koristi se kad neko promeni ulogu ili ode iz firme. "Obriši" je samo za ispravku pogrešnog unosa.</p>'),
+('dobavljaci', 'Pomoć — Dobavljači',
+'<p>A.5.19-5.23 traže da se dobavljačima koji imaju pristup informacijama ili utiču na bezbednost pruženih usluga posveti pažnja proporcionalna riziku.</p>
+<h4>Pet provera</h4>
+<p>Da li dobavljač ima pristup podacima, da li je cloud usluga, da li je potpisan ugovor o obradi podataka (DPA), da li postoji potvrđena izlazna strategija (šta se dešava sa podacima pri raskidu), i da li su podobrađivači dobavljača pregledani.</p>
+<h4>Redovni pregledi</h4>
+<p>Dobavljači sa visokim rizikom (npr. pristup finansijskim podacima) zaslužuju češće preglede od onih koji nemaju nikakav pristup podacima.</p>'),
+('fizicka-bezbednost', 'Pomoć — Fizička bezbednost',
+'<p>Aneks A.7 traži kontrolu fizičkih prostora u kojima se obrađuju ili čuvaju informacije.</p>
+<h4>Tri elementa po lokaciji</h4>
+<p>Opis perimetra (kako izgleda prostor, ko sve ima pristup zgradi), kontrola ulaska (npr. elektronska brava sa karticama), i da li postoji video nadzor.</p>
+<h4>Ne mora biti data centar</h4>
+<p>Obična kancelarija sa nekoliko zaposlenih je i dalje fizička lokacija koja zaslužuje osnovnu kontrolu - ne treba čekati veliki prostor da bi se ovo popunilo.</p>'),
+('incidenti', 'Pomoć — Upravljanje incidentima',
+'<p>A.5.24-5.28 traže planiran način prijave bezbednosnih događaja, njihovu procenu, i učenje iz potvrđenih incidenata kroz analizu uzroka.</p>
+<h4>Anonimna prijava je u redu</h4>
+<p>Ostavljanje polja "Prijavio" praznim je namerna opcija - ponekad ljudi lakše prijave sumnjiv događaj ako ne moraju da stave svoje ime uz njega.</p>
+<h4>Ishodi procene</h4>
+<p>Svaki prijavljeni događaj na kraju dobija ishod: na čekanju (još se procenjuje), lažna uzbuna (proveren i odbačen), ili potvrđen incident (stvaran problem koji zahteva odgovor).</p>
+<h4>Zatvaranje i ponovno otvaranje</h4>
+<p>Incident se zatvara kad je rešen - ali može se ponovo otvoriti ako se ispostavi da problem nije zaista rešen.</p>'),
+('kontinuitet-poslovanja', 'Pomoć — Kontinuitet poslovanja',
+'<p>A.5.29 traži da bezbednost informacija ostane održana tokom poremećaja, a A.5.30 spremnost IKT sistema za kontinuitet - plan za svaki realan scenario prekida, i redovno testiranje da li taj plan zaista radi.</p>
+<h4>Realni scenariji</h4>
+<p>Nestanak struje, pad glavnog servera, nedostupnost ključnog dobavljača (npr. banke) - fokusiraj se na ono što bi stvarno moglo da se desi vašoj firmi, ne na egzotične scenarije.</p>
+<h4>Testiranje nije opciono</h4>
+<p>Plan koji nikad nije testiran je samo pretpostavka - "Zabeleži test" beleži rezultat, datum, i kad je sledeći test na redu, da se to ne zaboravi.</p>'),
+('uskladjenost', 'Pomoć — Usklađenost',
+'<p>A.5.31-5.36 pokrivaju šest različitih oblasti usklađenosti - od zakonskih zahteva do provere sopstvenih pravila.</p>
+<h4>Šest kontrola ukratko</h4>
+<p>5.31 pravni/regulatorni/ugovorni zahtevi, 5.32 prava intelektualne svojine, 5.33 zaštita zapisa, 5.34 privatnost i zaštita ličnih podataka, 5.35 nezavisna provera bezbednosti, 5.36 usklađenost sa sopstvenim politikama i standardima.</p>
+<h4>Status usklađenosti</h4>
+<p>Usaglašeno, delimično, neusaglašeno, ili nije primenjivo - budi iskren u proceni, "delimično" je sasvim legitiman i čest status dok se firma tek priprema.</p>'),
+('pokazatelji', 'Pomoć — Pokazatelji i merenje',
+'<p>Klauzula 9.1 traži da se prati i meri koliko dobro ISMS zaista funkcioniše - ne samo da postoji na papiru.</p>
+<h4>Cilj i merenje su odvojeni</h4>
+<p>Prvo definišeš pokazatelj (šta se meri, jedinica, ciljna vrednost, koliko često) - pa onda kroz vreme dodaješ pojedinačna merenja. Aplikacija namerno ne ocenjuje da li je poslednje merenje "dobro" - to zavisi od toga da li je za taj pokazatelj poželjno veće ili manje.</p>
+<h4>Primer</h4>
+<p>"Vreme ukidanja pristupa nakon odlaska zaposlenog", jedinica "sati", cilj "ispod 24", učestalost "mesečno".</p>'),
+('interni-audit', 'Pomoć — Interni audit',
+'<p>Klauzula 9.2 traži planirane interne audite koji proveravaju da li ISMS ispunjava sopstvene zahteve i zahteve standarda.</p>
+<h4>Nezavisnost auditora</h4>
+<p>Auditor mora biti nezavisan od procesa koji proverava - zato polje "Ime auditora" nije vezano za listu zaposlenih, često je to spoljna osoba ili neko iz firme ko nije uključen u proces koji se proverava.</p>
+<h4>Nalazi i ozbiljnost</h4>
+<p>Svaki nalaz nosi svoju ozbiljnost - ozbiljniji nalazi (npr. sistemski propust u kontroli pristupa) zaslužuju bržu i temeljniju korektivnu meru od manjih, formalnih propusta.</p>'),
+('pregled-menadzmenta', 'Pomoć — Pregled menadžmenta',
+'<p>Klauzula 9.3 traži da menadžment redovno pregleda ISMS na osnovu sedam obaveznih ulaza (9.3 a-g), i da iz toga proizađu konkretne radnje.</p>
+<h4>Sedam ulaza ukratko</h4>
+<p>(a) status prethodnih radnji, (b) promene konteksta, (c) promene zahteva zainteresovanih strana, (d) učinak ISMS-a (neusaglašenosti, pokazatelji, audit, ciljevi), (e) povratne informacije zainteresovanih strana, (f) status tretmana rizika, (g) prilike za unapređenje.</p>
+<h4>Radnje su podjednako važne</h4>
+<p>Pregled bez konkretnih radnji je samo sastanak - vredi iz svakog pregleda izvući bar jednu jasnu radnju sa nosiocem i rokom.</p>'),
+('unapredjenje', 'Pomoć — Stalno unapređenje',
+'<p>Klauzula 10.1 traži stalno unapređenje ISMS-a. Ova stranica nema svoju tabelu - sažima dokaze unapređenja koji se već beleže na drugim mestima (ciljevi, tretman rizika, nalazi audita, incidenti, radnje iz pregleda).</p>
+<h4>Kako čitati ovu stranicu</h4>
+<p>Nije poenta da sve brojke budu "savršene" odjednom - poenta je da se prate kroz vreme i da se vidi da se firma zaista pomera napred, ne stoji u mestu.</p>'),
+('korektivne-mere', 'Pomoć — Korektivne mere',
+'<p>Klauzula 10.2 traži da se na neusaglašenosti reaguje korektivnim merama - ne samo da se otkloni posledica, nego da se proveri da li se isto može desiti i negde drugde, i da li je mera zaista bila efikasna.</p>
+<h4>Izvor mere</h4>
+<p>Korektivna mera može nastati iz konkretnog incidenta, nalaza internog audita, ili samostalno (npr. iz pregleda menadžmenta) - oba izvora su opciona, mera ne mora imati nijedan.</p>
+<h4>Provera efikasnosti</h4>
+<p>Sprovođenje mere nije kraj priče - status "Provereno efikasno" znači da je neko stvarno proverio da problem više ne postoji, ne samo da je nešto "urađeno".</p>');
+
+
  
