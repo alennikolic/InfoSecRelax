@@ -2,26 +2,21 @@
 /**
  * src/modules/kontekst.php - Klauzula 4.1: Kontekst organizacije.
  *
- * Prvi potpuno funkcionalan modul u aplikaciji, i prvi koji dobija
- * pravu formu za uređivanje (ne samo dodaj/obriši/status) - kroz
- * modalni prozorčić koji se puni preko JavaScript-a umesto navigacije
- * na posebnu stranicu. Ista forma (istog ID-a u HTML-u) služi i za
- * dodavanje i za uređivanje - JS samo menja naslov, vrednost skrivenog
- * action polja i popunjava/prazni ostala polja pre otvaranja.
- *
- * Napomena: kao i svuda u aplikaciji, forma pri grešci validacije ne
- * pamti prethodno unete vrednosti - kod modala to dodatno znači da se
- * modal ne otvara automatski nazad, samo se poruka o grešci prikaže na
- * vrhu stranice. Isti nivo jednostavnosti kao i pre, sada primenjen i
- * na modal.
+ * Prvi potpuno funkcionalan modul u aplikaciji, i prvi sa pravim
+ * uređivanjem (modal, action=update). Modal pomoći ovde je samo
+ * prikaz - uređivanje teksta se radi centralno na
+ * modules/pomoc-uredjivanje.php, ne po svakoj stranici posebno.
  */
 
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../includes/help-content.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
+
+$pageSlug = 'kontekst';
 
 $errors = [];
 
@@ -108,12 +103,10 @@ $allFactors = $stmt->fetchAll();
 
 $externalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_type'] === 'spoljni');
 $internalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_type'] === 'unutrasnji');
-?>
 
-<p class="module-intro">
-    Klauzula 4.1 traži da identifikujete spoljne i unutrašnje faktore koji utiču na vašu firmu
-    i na to da li će sistem bezbednosti informacija zaista postići svoju svrhu.
-</p>
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
+?>
 
 <?php if (!empty($errors)): ?>
 <div class="alert alert-error">
@@ -123,7 +116,10 @@ $internalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_ty
 </div>
 <?php endif; ?>
 
-<button type="button" class="btn-primary" onclick="openAddFactorModal()">+ Dodaj faktor</button>
+<div class="toolbar">
+    <button type="button" class="btn-primary" onclick="openAddFactorModal()">+ Dodaj faktor</button>
+    <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+</div>
 
 <div class="factor-columns">
     <div class="factor-column">
@@ -180,13 +176,18 @@ $internalFactors = array_filter($allFactors, fn(array $f): bool => $f['factor_ty
                     placeholder="npr. Zakon o zaštiti podataka o ličnosti zahteva posebnu pažnju pri obradi ličnih podataka klijenata."></textarea>
             </div>
 
-            <div class="modal-actions">
-                <button type="button" class="btn-secondary" onclick="closeFactorModal()">Otkaži</button>
-                <button type="submit" class="btn-primary">Sačuvaj</button>
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromFactorModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeFactorModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
             </div>
         </form>
     </div>
 </div>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
 
 <script>
 function openAddFactorModal() {
@@ -211,6 +212,11 @@ function openEditFactorModal(factor) {
 
 function closeFactorModal() {
     document.getElementById('factor-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromFactorModal() {
+    closeFactorModal();
+    openHelpModal();
 }
 
 document.addEventListener('keydown', function (event) {

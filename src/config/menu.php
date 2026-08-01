@@ -75,4 +75,7 @@ return [
     ['slug' => 'unapredjenje',             'title' => 'Stalno unapređenje',         'iso_ref' => 'Klauzula 10.1',             'group' => 'Unapređenje'],
     ['slug' => 'korektivne-mere',          'title' => 'Korektivne mere',            'iso_ref' => 'Klauzula 10.2',             'group' => 'Unapređenje'],
 
+    // --- Alati (van standarda - administrativne funkcije aplikacije) ---
+    ['slug' => 'pomoc-uredjivanje',        'title' => 'Uređivanje pomoći',          'iso_ref' => null,                        'group' => 'Alati'],
+
 ];
