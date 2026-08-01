@@ -19,10 +19,14 @@
  * index.php i layout u includes/header.php automatski je prikazuju,
  * bez potrebe za izmenom bilo čega drugog.
  *
- * Izuzetak od "redosled prati standard": "zaposleni" nije vezan za
- * jednu klauzulu, nego je osnovni skup podataka (personnel) od kog
- * zavisi skoro svaki kasniji modul - zato je uveden odmah pre "uloge",
- * koja je prvi modul kome zaista treba da bira osobu iz liste.
+ * Izuzeci od "redosled prati standard":
+ *   - "zaposleni" nije vezan za jednu klauzulu, nego je osnovni skup
+ *     podataka (personnel) od kog zavisi skoro svaki kasniji modul -
+ *     zato je uveden odmah pre "uloge".
+ *   - "liderstvo" (5.1) nema svoju tabelu u šemi - narativna je
+ *     klauzula, dokazuje se kroz ono što se već beleži na drugim
+ *     mestima (politike, ciljevi, pregledi menadžmenta, uloge), pa je
+ *     read-only pregled/dashboard, isti princip kao "unapredjenje" (10.1).
  */
 
 return [
@@ -36,6 +40,7 @@ return [
     ['slug' => 'obim',                     'title' => 'Obim ISMS-a',                'iso_ref' => 'Klauzula 4.3',              'group' => 'Kontekst i obim'],
 
     // --- Liderstvo (Poglavlje 5) ---
+    ['slug' => 'liderstvo',                'title' => 'Liderstvo i posvećenost',    'iso_ref' => 'Klauzula 5.1',              'group' => 'Liderstvo'],
     ['slug' => 'politike',                 'title' => 'Politike bezbednosti',       'iso_ref' => 'Klauzula 5.2 / A.5.1',      'group' => 'Liderstvo'],
     ['slug' => 'zaposleni',                'title' => 'Zaposleni i saradnici',      'iso_ref' => 'A.6',                       'group' => 'Liderstvo'],
     ['slug' => 'uloge',                    'title' => 'Uloge i odgovornosti',       'iso_ref' => 'Klauzula 5.3 / A.5.2',      'group' => 'Liderstvo'],
