@@ -853,3 +853,42 @@ INSERT INTO annex_a_controls (control_ref, theme, title) VALUES
 -- obrazac koristi i proizvodni pogon, i advokatska kancelarija, i
 -- turistička agencija iz primera na blogu, svaka sa svojim sadržajem.
 -- =====================================================================
+
+
+-- db/migrations/001_add_isms_resources.sql
+--
+-- Dodaje tabelu za Klauzulu 7.1 (Resursi) - šta je obezbeđeno za ISMS:
+-- budžet, osoblje, alati/licence, obuka, infrastruktura.
+--
+-- PRIMENA NA POSTOJEĆU BAZU (bez gubitka podataka - db_data volume
+-- ostaje netaknut, ovo samo dodaje jednu novu tabelu):
+--
+--   docker exec -i InfoSecRelax_db mysql \
+--       -u infosecrelax_user -pinfosecrelax_password infosecrelax \
+--       < db/migrations/001_add_isms_resources.sql
+--
+-- ZA BUDUĆE SVEŽE INSTALACIJE (nov, prazan Docker volume):
+--   docker-entrypoint-initdb.d pokreće samo db/init.sql, ne i fajlove iz
+--   ove migrations/ fascikle. Da svež "docker-compose up" odmah dobije i
+--   ovu tabelu, prekopiraj CREATE TABLE blok ispod na kraj db/init.sql,
+--   pre "-- Kraj šeme" komentara. Namerno nije urađeno automatski ovde -
+--   izmena celog init.sql fajla nosi rizik greške pri prepisivanju, dok
+--   je ovaj mali dodatak siguran da se doda ručno, uz kopiranje.
+--
+-- IF NOT EXISTS čini ovaj fajl bezbednim za slučajno ponovno pokretanje.
+
+CREATE TABLE IF NOT EXISTS isms_resources (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_id     BIGINT UNSIGNED NOT NULL,
+    resource_type       ENUM('budzet','osoblje','alat_ili_licenca','obuka','infrastruktura','ostalo') NOT NULL,
+    description         TEXT NOT NULL,
+    amount_or_quantity  VARCHAR(255) NULL COMMENT 'npr. 40.000 RSD, 2 dana mesecno, 1 licenca',
+    provided_by         BIGINT UNSIGNED NULL COMMENT 'ko je odobrio/obezbedio',
+    status              ENUM('planirano','obezbedjeno','u_koriscenju') NOT NULL DEFAULT 'planirano',
+    review_date         DATE NULL,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    FOREIGN KEY (provided_by) REFERENCES personnel(id) ON DELETE SET NULL,
+    INDEX idx_resources_org (organization_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Klauzula 7.1 - resursi obezbedjeni za ISMS.';
