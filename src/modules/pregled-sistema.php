@@ -124,12 +124,28 @@ foreach ($menu as $item) {
 }
 ?>
 
-<p class="module-intro">
-    Klauzula 4.4 traži da se ISMS uspostavi, primeni, održava i stalno
-    unapređuje kao celina - ne kao skup nepovezanih dokumenata, nego kao
-    sistem procesa koji međusobno deluju. Ova stranica daje pregled celog
-    sistema na jednom mestu, organizovan istim redosledom kao meni.
-</p>
+<div class="soa-summary">
+    <div class="soa-summary-stat">
+        <span class="stat-value"><?= (int) ($moduleCounts['zaposleni'] ?? 0) ?></span>
+        <span class="stat-label">Aktivnih zaposlenih</span>
+    </div>
+    <div class="soa-summary-stat">
+        <span class="stat-value"><?= (int) ($riskStats['total'] ?? 0) ?></span>
+        <span class="stat-label">Identifikovanih rizika</span>
+    </div>
+    <div class="soa-summary-stat">
+        <span class="stat-value"><?= (int) ($riskStats['high'] ?? 0) ?></span>
+        <span class="stat-label">Visokih rizika</span>
+    </div>
+    <div class="soa-summary-stat">
+        <span class="stat-value"><?= $openIncidentsCount ?></span>
+        <span class="stat-label">Otvorenih incidenata</span>
+    </div>
+    <div class="soa-summary-stat">
+        <span class="stat-value"><?= $soaTotal > 0 ? $soaFilled . '/' . $soaTotal : '—' ?></span>
+        <span class="stat-label">SoA kontrola obrazloženo</span>
+    </div>
+</div>
 
 <?php if (isset($_GET['demo_imported'])): ?>
 <div class="alert alert-success">
@@ -161,29 +177,6 @@ foreach ($menu as $item) {
         <input type="hidden" name="action" value="import_demo_data">
         <button type="submit" class="btn-danger">Uvezi demo podatke</button>
     </form>
-</div>
-
-<div class="soa-summary">
-    <div class="soa-summary-stat">
-        <span class="stat-value"><?= (int) ($moduleCounts['zaposleni'] ?? 0) ?></span>
-        <span class="stat-label">Aktivnih zaposlenih</span>
-    </div>
-    <div class="soa-summary-stat">
-        <span class="stat-value"><?= (int) ($riskStats['total'] ?? 0) ?></span>
-        <span class="stat-label">Identifikovanih rizika</span>
-    </div>
-    <div class="soa-summary-stat">
-        <span class="stat-value"><?= (int) ($riskStats['high'] ?? 0) ?></span>
-        <span class="stat-label">Visokih rizika</span>
-    </div>
-    <div class="soa-summary-stat">
-        <span class="stat-value"><?= $openIncidentsCount ?></span>
-        <span class="stat-label">Otvorenih incidenata</span>
-    </div>
-    <div class="soa-summary-stat">
-        <span class="stat-value"><?= $soaTotal > 0 ? $soaFilled . '/' . $soaTotal : '—' ?></span>
-        <span class="stat-label">SoA kontrola obrazloženo</span>
-    </div>
 </div>
 
 <?php foreach ($groupedMenu as $groupName => $items): ?>
