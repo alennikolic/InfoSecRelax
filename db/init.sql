@@ -853,3 +853,97 @@ INSERT INTO annex_a_controls (control_ref, theme, title) VALUES
 -- obrazac koristi i proizvodni pogon, i advokatska kancelarija, i
 -- turistička agencija iz primera na blogu, svaka sa svojim sadržajem.
 -- =====================================================================
+
+
+-- db/migrations/001_add_isms_resources.sql
+--
+-- Dodaje tabelu za Klauzulu 7.1 (Resursi) - šta je obezbeđeno za ISMS:
+-- budžet, osoblje, alati/licence, obuka, infrastruktura.
+--
+-- PRIMENA NA POSTOJEĆU BAZU (bez gubitka podataka - db_data volume
+-- ostaje netaknut, ovo samo dodaje jednu novu tabelu):
+--
+--   docker exec -i InfoSecRelax_db mysql \
+--       -u infosecrelax_user -pinfosecrelax_password infosecrelax \
+--       < db/migrations/001_add_isms_resources.sql
+--
+-- ZA BUDUĆE SVEŽE INSTALACIJE (nov, prazan Docker volume):
+--   docker-entrypoint-initdb.d pokreće samo db/init.sql, ne i fajlove iz
+--   ove migrations/ fascikle. Da svež "docker-compose up" odmah dobije i
+--   ovu tabelu, prekopiraj CREATE TABLE blok ispod na kraj db/init.sql,
+--   pre "-- Kraj šeme" komentara. Namerno nije urađeno automatski ovde -
+--   izmena celog init.sql fajla nosi rizik greške pri prepisivanju, dok
+--   je ovaj mali dodatak siguran da se doda ručno, uz kopiranje.
+--
+-- IF NOT EXISTS čini ovaj fajl bezbednim za slučajno ponovno pokretanje.
+
+CREATE TABLE IF NOT EXISTS isms_resources (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_id     BIGINT UNSIGNED NOT NULL,
+    resource_type       ENUM('budzet','osoblje','alat_ili_licenca','obuka','infrastruktura','ostalo') NOT NULL,
+    description         TEXT NOT NULL,
+    amount_or_quantity  VARCHAR(255) NULL COMMENT 'npr. 40.000 RSD, 2 dana mesecno, 1 licenca',
+    provided_by         BIGINT UNSIGNED NULL COMMENT 'ko je odobrio/obezbedio',
+    status              ENUM('planirano','obezbedjeno','u_koriscenju') NOT NULL DEFAULT 'planirano',
+    review_date         DATE NULL,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    FOREIGN KEY (provided_by) REFERENCES personnel(id) ON DELETE SET NULL,
+    INDEX idx_resources_org (organization_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='Klauzula 7.1 - resursi obezbedjeni za ISMS.';
+--
+-- Dodaje tabelu za A.5.29 (bezbednost informacija tokom poremećaja) i
+-- A.5.30 (spremnost IKT sistema za kontinuitet poslovanja) - plan
+-- odgovora po scenariju prekida, sa istorijom poslednjeg testiranja.
+--
+-- ZA BUDUĆE SVEŽE INSTALACIJE: prekopirati CREATE TABLE blok ispod na
+-- kraj db/init.sql, pre "-- Kraj šeme" komentara (isti princip kao
+-- 001_add_isms_resources.sql).
+--
+-- IF NOT EXISTS čini ovaj fajl bezbednim za slučajno ponovno pokretanje.
+
+CREATE TABLE IF NOT EXISTS continuity_plans (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_id     BIGINT UNSIGNED NOT NULL,
+    scenario            VARCHAR(255) NOT NULL COMMENT 'npr. Nestanak struje, Pad glavnog servera',
+    plan_description    TEXT NOT NULL,
+    owner_id            BIGINT UNSIGNED NULL,
+    last_tested_at      DATE NULL,
+    test_result         ENUM('uspesno','delimicno_uspesno','neuspesno','nije_testirano') NOT NULL DEFAULT 'nije_testirano',
+    next_test_due       DATE NULL,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES personnel(id) ON DELETE SET NULL,
+    INDEX idx_continuity_org (organization_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='A.5.29-5.30 - planovi kontinuiteta poslovanja po scenariju prekida.';
+--
+-- Dodaje tabelu za A.5.31-5.36 (Usklađenost) - jedan registar za svih
+-- šest kontrola (pravni zahtevi, intelektualna svojina, zaštita
+-- zapisa, privatnost, nezavisna provera, usklađenost sa politikama),
+-- razlikovanih preko control_ref.
+--
+-- Postojeća legal_requirements tabela (koja pokriva samo A.5.31)
+-- ostaje u šemi neiskorišćena - ista situacija kao equipment,
+-- storage_media i slične tabele bez svoje stavke menija. Jedan
+-- dosledan registar za svih šest kontrola je jednostavniji za
+-- održavanje od dva paralelna mehanizma.
+-- IF NOT EXISTS čini ovaj fajl bezbednim za slučajno ponovno pokretanje.
+
+CREATE TABLE IF NOT EXISTS compliance_items (
+    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_id     BIGINT UNSIGNED NOT NULL,
+    control_ref         ENUM('5.31','5.32','5.33','5.34','5.35','5.36') NOT NULL,
+    title               VARCHAR(255) NOT NULL,
+    description         TEXT NULL,
+    status              ENUM('usaglaseno','delimicno','neusaglaseno','nije_primenjivo') NOT NULL DEFAULT 'delimicno',
+    owner_id            BIGINT UNSIGNED NULL,
+    last_reviewed_at    DATE NULL,
+    next_review_due     DATE NULL,
+    created_at          TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    FOREIGN KEY (owner_id) REFERENCES personnel(id) ON DELETE SET NULL,
+    INDEX idx_compliance_org (organization_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='A.5.31-5.36 - registar uskladjenosti po kontroli.';
