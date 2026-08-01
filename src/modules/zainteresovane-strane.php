@@ -4,20 +4,26 @@
  *
  * Klauzula 4.2: Razumevanje potreba i očekivanja zainteresovanih strana.
  *
- * Isti obrazac kao modules/kontekst.php (forma + prikaz + brisanje, PRG
- * na svakom upisu), proširen na odnos roditelj-dete: jedna
- * zainteresovana strana (interested_parties) ima nula ili više zahteva
- * (interested_party_requirements). Tabela zahteva nema svoju
- * organization_id kolonu, pa se multi-tenant provera radi preko JOIN-a
- * na interested_parties u svakom upitu koji dira zahteve.
+ * Isti obrazac kao kontekst.php: modal za dodavanje/uređivanje strane
+ * (name + party_type), toolbar sa Pomoć desno, deljeni modal pomoći
+ * (view-only, uređivanje centralno na pomoc-uredjivanje.php).
+ *
+ * Zahtevi (interested_party_requirements) ostaju dodaj/obriši - nemaju
+ * svoje uređivanje, to je ugnježden nivo ispod glavnog CRUD-a i van
+ * obima ovog prolaza. Tabela zahteva nema svoju organization_id
+ * kolonu, pa se multi-tenant provera radi preko JOIN-a na
+ * interested_parties u svakom upitu koji dira zahteve.
  */
 
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../includes/help-content.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
+
+$pageSlug = 'zainteresovane-strane';
 
 $errors = [];
 
@@ -49,6 +55,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_p
     }
 }
 
+// --- Ažuriranje postojeće zainteresovane strane ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_party') {
+    $id        = (int) ($_POST['id'] ?? 0);
+    $name      = trim($_POST['name'] ?? '');
+    $partyType = $_POST['party_type'] ?? '';
+
+    if ($name === '') {
+        $errors[] = 'Naziv zainteresovane strane je obavezan.';
+    }
+    if (!in_array($partyType, ['interna', 'eksterna'], true)) {
+        $errors[] = 'Izaberite da li je strana interna ili eksterna.';
+    }
+
+    if (empty($errors)) {
+        $stmt = $pdo->prepare(
+            'UPDATE interested_parties SET name = :name, party_type = :party_type
+             WHERE id = :id AND organization_id = :org_id'
+        );
+        $stmt->execute([
+            'name'       => $name,
+            'party_type' => $partyType,
+            'id'         => $id,
+            'org_id'     => $organizationId,
+        ]);
+
+        header('Location: ?page=zainteresovane-strane');
+        exit;
+    }
+}
+
 // --- Dodavanje zahteva postojećoj strani ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_requirement') {
     $interestedPartyId = (int) ($_POST['interested_party_id'] ?? 0);
@@ -56,8 +92,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_r
     $addressedByIsms    = isset($_POST['addressed_by_isms']) ? 1 : 0;
     $notes              = trim($_POST['notes'] ?? '');
 
-    // Strana mora da postoji i da pripada ovoj organizaciji - sprečava
-    // dodavanje zahteva pod tuđu zainteresovanu stranu preko izmenjenog POST-a.
     $partyCheck = $pdo->prepare(
         'SELECT id FROM interested_parties WHERE id = :id AND organization_id = :org_id'
     );
@@ -136,13 +170,10 @@ foreach ($requirementsStmt->fetchAll() as $requirement) {
 
 $internalParties = array_filter($allParties, fn(array $p): bool => $p['party_type'] === 'interna');
 $externalParties = array_filter($allParties, fn(array $p): bool => $p['party_type'] === 'eksterna');
-?>
 
-<p class="module-intro">
-    Klauzula 4.2 traži da identifikujete zainteresovane strane relevantne za sistem
-    bezbednosti informacija, njihove zahteve, i da odredite koji od tih zahteva
-    će biti pokriveni kroz sam ISMS.
-</p>
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
+?>
 
 <?php if (!empty($errors)): ?>
 <div class="alert alert-error">
@@ -152,26 +183,10 @@ $externalParties = array_filter($allParties, fn(array $p): bool => $p['party_typ
 </div>
 <?php endif; ?>
 
-<form method="post" class="factor-form">
-    <input type="hidden" name="action" value="add_party">
-
-    <div class="form-row">
-        <label for="party_type">Vrsta strane</label>
-        <select name="party_type" id="party_type" required>
-            <option value="">Izaberite...</option>
-            <option value="interna">Interna</option>
-            <option value="eksterna">Eksterna</option>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="name">Naziv</label>
-        <input type="text" name="name" id="name" required
-            placeholder="npr. Klijenti, Zaposleni, Nadzorni organ, Dobavljač hostinga">
-    </div>
-
-    <button type="submit" class="btn-primary">Dodaj zainteresovanu stranu</button>
-</form>
+<div class="toolbar">
+    <button type="button" class="btn-primary" onclick="openAddPartyModal()">+ Dodaj zainteresovanu stranu</button>
+    <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+</div>
 
 <div class="factor-columns">
     <div class="factor-column">
@@ -198,3 +213,77 @@ $externalParties = array_filter($allParties, fn(array $p): bool => $p['party_typ
         <?php endif; ?>
     </div>
 </div>
+
+<div class="modal-overlay" id="party-modal-overlay" onclick="closePartyModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="party-modal-title">Dodaj zainteresovanu stranu</span>
+            <button type="button" class="modal-close" onclick="closePartyModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post" id="party-modal-form">
+            <input type="hidden" name="action" id="party-modal-action" value="add_party">
+            <input type="hidden" name="id" id="party-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_party_type">Vrsta strane</label>
+                <select name="party_type" id="modal_party_type" required>
+                    <option value="">Izaberite...</option>
+                    <option value="interna">Interna</option>
+                    <option value="eksterna">Eksterna</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_party_name">Naziv</label>
+                <input type="text" name="name" id="modal_party_name" required
+                    placeholder="npr. Klijenti, Zaposleni, Nadzorni organ, Dobavljač hostinga">
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromPartyModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closePartyModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
+
+<script>
+function openAddPartyModal() {
+    document.getElementById('party-modal-title').textContent = 'Dodaj zainteresovanu stranu';
+    document.getElementById('party-modal-action').value = 'add_party';
+    document.getElementById('party-modal-id').value = '';
+    document.getElementById('modal_party_type').value = '';
+    document.getElementById('modal_party_name').value = '';
+    document.getElementById('party-modal-overlay').classList.add('is-open');
+}
+
+function openEditPartyModal(party) {
+    document.getElementById('party-modal-title').textContent = 'Uredi zainteresovanu stranu';
+    document.getElementById('party-modal-action').value = 'update_party';
+    document.getElementById('party-modal-id').value = party.id;
+    document.getElementById('modal_party_type').value = party.party_type;
+    document.getElementById('modal_party_name').value = party.name;
+    document.getElementById('party-modal-overlay').classList.add('is-open');
+}
+
+function closePartyModal() {
+    document.getElementById('party-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromPartyModal() {
+    closePartyModal();
+    openHelpModal();
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closePartyModal();
+    }
+});
+</script>
