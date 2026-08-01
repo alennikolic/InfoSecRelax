@@ -64,6 +64,7 @@ return [
     ['slug' => 'fizicka-bezbednost',       'title' => 'Fizička bezbednost',         'iso_ref' => 'A.7',                       'group' => 'Operacija'],
     ['slug' => 'incidenti',                'title' => 'Upravljanje incidentima',    'iso_ref' => 'A.5.24-5.28',               'group' => 'Operacija'],
     ['slug' => 'kontinuitet-poslovanja',    'title' => 'Kontinuitet poslovanja',     'iso_ref' => 'A.5.29-5.30',               'group' => 'Operacija'],
+    ['slug' => 'uskladjenost',              'title' => 'Usklađenost',                'iso_ref' => 'A.5.31-5.36',               'group' => 'Operacija'],
 
     // --- Ocenjivanje učinka (Poglavlje 9) ---
     ['slug' => 'pokazatelji',              'title' => 'Pokazatelji i merenje',      'iso_ref' => 'Klauzula 9.1',              'group' => 'Ocenjivanje učinka'],
