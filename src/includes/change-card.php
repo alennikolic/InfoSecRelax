@@ -25,9 +25,23 @@ $statusTone = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($change['title']) ?></span>
-        <span class="status-badge <?= htmlspecialchars($statusTone[$change['status']] ?? 'is-neutral') ?>">
-            <?= htmlspecialchars($statusLabels[$change['status']] ?? $change['status']) ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($statusTone[$change['status']] ?? 'is-neutral') ?>">
+                <?= htmlspecialchars($statusLabels[$change['status']] ?? $change['status']) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditChangeModal(<?= json_encode([
+                    "id"                => (int) $change["id"],
+                    "title"             => $change["title"],
+                    "description"       => $change["description"],
+                    "impact_assessment" => $change["impact_assessment"] ?? "",
+                    "test_plan"         => $change["test_plan"] ?? "",
+                    "rollback_plan"     => $change["rollback_plan"] ?? "",
+                    "approved_by"       => $change["approved_by"] ?? "",
+                    "planned_date"      => $change["planned_date"] ?? "",
+                    "is_unintended"     => (bool) $change["is_unintended"],
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if ($change['is_unintended']): ?>
@@ -74,7 +88,7 @@ $statusTone = [
         </div>
     </form>
 
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovu promenu?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovu promenu?');">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="id" value="<?= (int) $change['id'] ?>">
         <button type="submit" class="btn-delete">Obriši</button>
