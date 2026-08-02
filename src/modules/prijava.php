@@ -40,6 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="auth-form-wrap">
     <h2>Prijava na InfoSecRelax</h2>
 
+    <div class="demo-hint">
+        <p><strong>Brzo testiranje?</strong> Prijavi se demo nalogom:</p>
+        <p>Email: <code>demo@demo.local</code> &nbsp;·&nbsp; Lozinka: <code>AiSSPhTjXRFZox6eXZfH</code></p>
+    </div>
+
     <?php if ($loginError !== null): ?>
     <div class="alert alert-error">
         <p><?= htmlspecialchars($loginError) ?></p>
