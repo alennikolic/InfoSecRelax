@@ -739,6 +739,12 @@ body {
     margin-bottom: 20px;
 }
 
+.card-footer-right {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
 .modal-box-wide {
     max-width: 640px;
 }
