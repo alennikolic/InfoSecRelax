@@ -37,7 +37,22 @@ $alreadyAcknowledgedIds = array_map('intval', array_column($acknowledgments, 'pe
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($policy['title']) ?></span>
-        <span class="factor-category"><?= htmlspecialchars($policyTypeLabels[$policy['policy_type']] ?? $policy['policy_type']) ?></span>
+        <div class="button-group">
+            <span class="factor-category"><?= htmlspecialchars($policyTypeLabels[$policy['policy_type']] ?? $policy['policy_type']) ?></span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditPolicyModal(<?= json_encode([
+                    "id"                      => (int) $policy["id"],
+                    "title"                   => $policy["title"],
+                    "policy_type"             => $policy["policy_type"],
+                    "topic"                   => $policy["topic"] ?? "",
+                    "acknowledgment_required" => (bool) $policy["acknowledgment_required"],
+                    "classification"          => $policy["classification"],
+                    "owner_id"                => $policy["owner_id"] ?? "",
+                    "approved_by"             => $policy["approved_by"] ?? "",
+                    "approved_at"             => $policy["approved_at"] ?? "",
+                    "next_review_due"         => $policy["next_review_due"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if (!empty($policy['topic'])): ?>
