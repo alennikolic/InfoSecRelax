@@ -9,6 +9,10 @@
  * A.5.30/8.13), ali nemaju svoju stavku menija, pa nisu ovde da se ne
  * mešaju različite kontrole pod jedan naslov ("Sistemi i pristup").
  *
+ * Isti obrazac kao ostali moduli: toolbar sa Pomoć desno, modal za
+ * dodavanje/uređivanje sistema, "Dodaj pristup" kao poseban modal
+ * otvoren dugmetom u kartici umesto ugrađene forme.
+ *
  * supplier_id na sistemu namerno nije u formi - dobavljaci.php (sledeći
  * modul) tek treba da postoji da bi dropdown imao iz čega da bira.
  *
@@ -24,9 +28,12 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../includes/help-content.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
+
+$pageSlug = 'sistemi-pristup';
 
 $errors = [];
 
@@ -76,6 +83,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_s
             'owner_id'     => $ownerIdValue,
             'hosting_type' => $hostingType,
             'criticality'  => $criticality,
+        ]);
+
+        header('Location: ?page=sistemi-pristup');
+        exit;
+    }
+}
+
+// --- Ažuriranje postojećeg sistema ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_system') {
+    $id          = (int) ($_POST['id'] ?? 0);
+    $name        = trim($_POST['name'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $hostingType = $_POST['hosting_type'] ?? 'cloud';
+    $criticality = $_POST['criticality'] ?? 'srednji';
+    $ownerId     = trim($_POST['owner_id'] ?? '');
+
+    if ($name === '') {
+        $errors[] = 'Naziv sistema je obavezan.';
+    }
+    if (!in_array($hostingType, $validHostingTypes, true)) {
+        $errors[] = 'Izaberite tip hostinga.';
+    }
+    if (!in_array($criticality, $validCriticalities, true)) {
+        $errors[] = 'Izaberite kritičnost.';
+    }
+
+    $ownerIdValue = null;
+    if ($ownerId !== '') {
+        $ownerIdValue = (int) $ownerId;
+        $personCheck = $pdo->prepare('SELECT id FROM personnel WHERE id = :id AND organization_id = :org_id');
+        $personCheck->execute(['id' => $ownerIdValue, 'org_id' => $organizationId]);
+
+        if ($personCheck->fetchColumn() === false) {
+            $errors[] = 'Izabrani vlasnik nije pronađen.';
+            $ownerIdValue = null;
+        }
+    }
+
+    if (empty($errors)) {
+        $stmt = $pdo->prepare(
+            'UPDATE systems
+             SET name = :name, description = :description, owner_id = :owner_id,
+                 hosting_type = :hosting_type, criticality = :criticality
+             WHERE id = :id AND organization_id = :org_id'
+        );
+        $stmt->execute([
+            'name'         => $name,
+            'description'  => $description !== '' ? $description : null,
+            'owner_id'     => $ownerIdValue,
+            'hosting_type' => $hostingType,
+            'criticality'  => $criticality,
+            'id'           => $id,
+            'org_id'       => $organizationId,
         ]);
 
         header('Location: ?page=sistemi-pristup');
@@ -219,12 +279,10 @@ $accessBySystem = [];
 foreach ($accessStmt->fetchAll() as $access) {
     $accessBySystem[$access['system_id']][] = $access;
 }
-?>
 
-<p class="module-intro">
-    Klauzula 8.1 i A.8.2-8.5 traže popis sistema i kontrolu ko ima pristup
-    čemu - posebno privilegovan pristup, koji uvek treba posebno opravdanje.
-</p>
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
+?>
 
 <?php if (!empty($errors)): ?>
 <div class="alert alert-error">
@@ -234,53 +292,10 @@ foreach ($accessStmt->fetchAll() as $access) {
 </div>
 <?php endif; ?>
 
-<form method="post" class="factor-form">
-    <input type="hidden" name="action" value="add_system">
-
-    <div class="form-row">
-        <label for="name">Naziv sistema</label>
-        <input type="text" name="name" id="name" required placeholder="npr. CRM za klijente">
-    </div>
-
-    <div class="form-row">
-        <label for="description">Opis (opciono)</label>
-        <textarea name="description" id="description" rows="2"
-            placeholder="npr. Cloud aplikacija za praćenje klijenata i njihovih zahteva."></textarea>
-    </div>
-
-    <div class="form-row">
-        <label for="hosting_type">Tip hostinga</label>
-        <select name="hosting_type" id="hosting_type">
-            <option value="cloud" selected>Cloud</option>
-            <option value="lokalno">Lokalno</option>
-            <option value="hibridno">Hibridno</option>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="criticality">Kritičnost</label>
-        <select name="criticality" id="criticality">
-            <option value="nizak">Nizak</option>
-            <option value="srednji" selected>Srednji</option>
-            <option value="visok">Visok</option>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="owner_id">Vlasnik sistema (opciono)</label>
-        <select name="owner_id" id="owner_id">
-            <option value="">Nije dodeljen</option>
-            <?php foreach ($activePersonnelOptions as $option): ?>
-                <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <?php if (empty($activePersonnelOptions)): ?>
-            <p class="item-meta">Nema unetih aktivnih osoba - prvo ih dodaj na stranici "Zaposleni i saradnici".</p>
-        <?php endif; ?>
-    </div>
-
-    <button type="submit" class="btn-primary">Dodaj sistem</button>
-</form>
+<div class="toolbar">
+    <button type="button" class="btn-primary" onclick="openAddSystemModal()">+ Dodaj sistem</button>
+    <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+</div>
 
 <?php if (empty($allSystems)): ?>
     <p class="empty-state">Još uvek nema unetih sistema.</p>
@@ -290,3 +305,186 @@ foreach ($accessStmt->fetchAll() as $access) {
         <?php include __DIR__ . '/../includes/system-card.php'; ?>
     <?php endforeach; ?>
 <?php endif; ?>
+
+<div class="modal-overlay" id="system-modal-overlay" onclick="closeSystemModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="system-modal-title">Dodaj sistem</span>
+            <button type="button" class="modal-close" onclick="closeSystemModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post" id="system-modal-form">
+            <input type="hidden" name="action" id="system-modal-action" value="add_system">
+            <input type="hidden" name="id" id="system-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_name">Naziv sistema</label>
+                <input type="text" name="name" id="modal_name" required placeholder="npr. CRM za klijente">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_description">Opis (opciono)</label>
+                <textarea name="description" id="modal_description" rows="2"
+                    placeholder="npr. Cloud aplikacija za praćenje klijenata i njihovih zahteva."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_hosting_type">Tip hostinga</label>
+                <select name="hosting_type" id="modal_hosting_type">
+                    <option value="cloud">Cloud</option>
+                    <option value="lokalno">Lokalno</option>
+                    <option value="hibridno">Hibridno</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_criticality">Kritičnost</label>
+                <select name="criticality" id="modal_criticality">
+                    <option value="nizak">Nizak</option>
+                    <option value="srednji">Srednji</option>
+                    <option value="visok">Visok</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_owner_id">Vlasnik sistema (opciono)</label>
+                <select name="owner_id" id="modal_owner_id">
+                    <option value="">Nije dodeljen</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (empty($activePersonnelOptions)): ?>
+                    <p class="item-meta">Nema unetih aktivnih osoba - prvo ih dodaj na stranici "Zaposleni i saradnici".</p>
+                <?php endif; ?>
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromSystemModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeSystemModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="access-modal-overlay" onclick="closeAccessModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="access-modal-title">Dodaj pristup</span>
+            <button type="button" class="modal-close" onclick="closeAccessModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post">
+            <input type="hidden" name="action" value="add_access">
+            <input type="hidden" name="system_id" id="access-modal-system-id" value="">
+
+            <div class="form-row">
+                <label for="modal_access_personnel_id">Osoba</label>
+                <select name="personnel_id" id="modal_access_personnel_id" required>
+                    <option value="">Izaberite...</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_access_level">Nivo pristupa</label>
+                <select name="access_level" id="modal_access_level">
+                    <option value="standardni">Standardni</option>
+                    <option value="privilegovan">Privilegovan</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_scope_note">Napomena o obimu (opciono)</label>
+                <input type="text" name="scope_note" id="modal_scope_note"
+                    placeholder="npr. Samo dodeljeni portfolio klijenata">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_granted_by">Odobrio (opciono)</label>
+                <select name="granted_by" id="modal_granted_by">
+                    <option value="">Nije dodeljen</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromAccessModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeAccessModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
+
+<script>
+function openAddSystemModal() {
+    document.getElementById('system-modal-title').textContent = 'Dodaj sistem';
+    document.getElementById('system-modal-action').value = 'add_system';
+    document.getElementById('system-modal-id').value = '';
+    document.getElementById('modal_name').value = '';
+    document.getElementById('modal_description').value = '';
+    document.getElementById('modal_hosting_type').value = 'cloud';
+    document.getElementById('modal_criticality').value = 'srednji';
+    document.getElementById('modal_owner_id').value = '';
+    document.getElementById('system-modal-overlay').classList.add('is-open');
+}
+
+function openEditSystemModal(system) {
+    document.getElementById('system-modal-title').textContent = 'Uredi sistem';
+    document.getElementById('system-modal-action').value = 'update_system';
+    document.getElementById('system-modal-id').value = system.id;
+    document.getElementById('modal_name').value = system.name;
+    document.getElementById('modal_description').value = system.description;
+    document.getElementById('modal_hosting_type').value = system.hosting_type;
+    document.getElementById('modal_criticality').value = system.criticality;
+    document.getElementById('modal_owner_id').value = system.owner_id;
+    document.getElementById('system-modal-overlay').classList.add('is-open');
+}
+
+function closeSystemModal() {
+    document.getElementById('system-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromSystemModal() {
+    closeSystemModal();
+    openHelpModal();
+}
+
+function openAccessModal(systemId, systemName) {
+    document.getElementById('access-modal-title').textContent = 'Dodaj pristup — ' + systemName;
+    document.getElementById('access-modal-system-id').value = systemId;
+    document.getElementById('modal_access_personnel_id').value = '';
+    document.getElementById('modal_access_level').value = 'standardni';
+    document.getElementById('modal_scope_note').value = '';
+    document.getElementById('modal_granted_by').value = '';
+    document.getElementById('access-modal-overlay').classList.add('is-open');
+}
+
+function closeAccessModal() {
+    document.getElementById('access-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromAccessModal() {
+    closeAccessModal();
+    openHelpModal();
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeSystemModal();
+        closeAccessModal();
+    }
+});
+</script>
