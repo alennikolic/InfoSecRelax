@@ -8,8 +8,11 @@
  * access_grants za taj sistem, spojenih JOIN-om sa personnel radi
  * person_name i granted_by_name; može biti prazan niz) već postavljeni
  * pre uključivanja ovog fajla - deli scope sa foreach petljom iz koje
- * se poziva. Takođe očekuje $activePersonnelOptions, postavljen jednom
- * u sistemi-pristup.php pre foreach petlje.
+ * se poziva.
+ *
+ * "+ Dodaj pristup" ne otvara više ugrađenu formu u kartici - otvara
+ * zajednički modal na nivou stranice (modules/sistemi-pristup.php),
+ * isti obrazac kao "+ Dodaj zahtev" u party-card.php.
  */
 
 $hostingLabels = [
@@ -32,9 +35,20 @@ $accessLevelLabels = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($system['name']) ?></span>
-        <span class="status-badge <?= htmlspecialchars($criticalityTone[$system['criticality']] ?? 'is-neutral') ?>">
-            Kritičnost: <?= htmlspecialchars(ucfirst($system['criticality'])) ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($criticalityTone[$system['criticality']] ?? 'is-neutral') ?>">
+                Kritičnost: <?= htmlspecialchars(ucfirst($system['criticality'])) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditSystemModal(<?= json_encode([
+                    "id"           => (int) $system["id"],
+                    "name"         => $system["name"],
+                    "description"  => $system["description"] ?? "",
+                    "hosting_type" => $system["hosting_type"],
+                    "criticality"  => $system["criticality"],
+                    "owner_id"     => $system["owner_id"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if (!empty($system['description'])): ?>
@@ -96,48 +110,10 @@ $accessLevelLabels = [
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="add_access">
-        <input type="hidden" name="system_id" value="<?= (int) $system['id'] ?>">
+    <button type="button" class="btn-secondary"
+        onclick='openAccessModal(<?= (int) $system['id'] ?>, <?= json_encode($system['name'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>+ Dodaj pristup</button>
 
-        <div class="form-row">
-            <label for="personnel_id_<?= (int) $system['id'] ?>">Osoba</label>
-            <select name="personnel_id" id="personnel_id_<?= (int) $system['id'] ?>" required>
-                <option value="">Izaberite...</option>
-                <?php foreach ($activePersonnelOptions as $option): ?>
-                    <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-row">
-            <label for="access_level_<?= (int) $system['id'] ?>">Nivo pristupa</label>
-            <select name="access_level" id="access_level_<?= (int) $system['id'] ?>">
-                <option value="standardni" selected>Standardni</option>
-                <option value="privilegovan">Privilegovan</option>
-            </select>
-        </div>
-
-        <div class="form-row">
-            <label for="scope_note_<?= (int) $system['id'] ?>">Napomena o obimu (opciono)</label>
-            <input type="text" name="scope_note" id="scope_note_<?= (int) $system['id'] ?>"
-                placeholder="npr. Samo dodeljeni portfolio klijenata">
-        </div>
-
-        <div class="form-row">
-            <label for="granted_by_<?= (int) $system['id'] ?>">Odobrio (opciono)</label>
-            <select name="granted_by" id="granted_by_<?= (int) $system['id'] ?>">
-                <option value="">Nije dodeljen</option>
-                <?php foreach ($activePersonnelOptions as $option): ?>
-                    <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <button type="submit" class="btn-secondary">Dodaj pristup</button>
-    </form>
-
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj sistem i sve zapise o pristupu?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj sistem i sve zapise o pristupu?');">
         <input type="hidden" name="action" value="delete_system">
         <input type="hidden" name="id" value="<?= (int) $system['id'] ?>">
         <button type="submit" class="btn-delete">Obriši sistem</button>
