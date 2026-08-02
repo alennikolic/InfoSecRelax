@@ -27,6 +27,10 @@
  *     klauzula, dokazuje se kroz ono što se već beleži na drugim
  *     mestima (politike, ciljevi, pregledi menadžmenta, uloge), pa je
  *     read-only pregled/dashboard, isti princip kao "unapredjenje" (10.1).
+ *   - "Rizik i planiranje" (Poglavlje 6) namerno stoji PRE "Liderstvo"
+ *     (Poglavlje 5) - obrnuto od brojeva klauzula. Ovo je svesna odluka
+ *     korisnika aplikacije, ne greška - ako se ikad vrati na strogi
+ *     redosled standarda, samo zameniti mesta ova dva bloka.
  */
 
 return [
@@ -39,18 +43,18 @@ return [
     ['slug' => 'zainteresovane-strane',    'title' => 'Zainteresovane strane',      'iso_ref' => 'Klauzula 4.2',              'group' => 'Kontekst i obim'],
     ['slug' => 'obim',                     'title' => 'Obim ISMS-a',                'iso_ref' => 'Klauzula 4.3',              'group' => 'Kontekst i obim'],
 
-    // --- Liderstvo (Poglavlje 5) ---
-    ['slug' => 'liderstvo',                'title' => 'Liderstvo i posvećenost',    'iso_ref' => 'Klauzula 5.1',              'group' => 'Liderstvo'],
-    ['slug' => 'politike',                 'title' => 'Politike bezbednosti',       'iso_ref' => 'Klauzula 5.2 / A.5.1',      'group' => 'Liderstvo'],
-    ['slug' => 'zaposleni',                'title' => 'Zaposleni i saradnici',      'iso_ref' => 'A.6',                       'group' => 'Liderstvo'],
-    ['slug' => 'uloge',                    'title' => 'Uloge i odgovornosti',       'iso_ref' => 'Klauzula 5.3 / A.5.2',      'group' => 'Liderstvo'],
-
-    // --- Rizik i planiranje (Poglavlje 6) ---
+    // --- Rizik i planiranje (Poglavlje 6) - namerno pre Liderstva, videti izuzetke gore ---
     ['slug' => 'sredstva',                 'title' => 'Popis sredstava',            'iso_ref' => 'A.5.9',                     'group' => 'Rizik i planiranje'],
     ['slug' => 'procena-rizika',           'title' => 'Procena rizika',             'iso_ref' => 'Klauzula 6.1.2',            'group' => 'Rizik i planiranje'],
     ['slug' => 'izjava-primenljivosti',    'title' => 'Izjava o primenljivosti',    'iso_ref' => 'Klauzula 6.1.3 / Aneks A',  'group' => 'Rizik i planiranje'],
     ['slug' => 'ciljevi',                  'title' => 'Ciljevi bezbednosti',        'iso_ref' => 'Klauzula 6.2',              'group' => 'Rizik i planiranje'],
     ['slug' => 'promene',                  'title' => 'Planiranje promena',         'iso_ref' => 'Klauzula 6.3',              'group' => 'Rizik i planiranje'],
+
+    // --- Liderstvo (Poglavlje 5) ---
+    ['slug' => 'liderstvo',                'title' => 'Liderstvo i posvećenost',    'iso_ref' => 'Klauzula 5.1',              'group' => 'Liderstvo'],
+    ['slug' => 'politike',                 'title' => 'Politike bezbednosti',       'iso_ref' => 'Klauzula 5.2 / A.5.1',      'group' => 'Liderstvo'],
+    ['slug' => 'zaposleni',                'title' => 'Zaposleni i saradnici',      'iso_ref' => 'A.6',                       'group' => 'Liderstvo'],
+    ['slug' => 'uloge',                    'title' => 'Uloge i odgovornosti',       'iso_ref' => 'Klauzula 5.3 / A.5.2',      'group' => 'Liderstvo'],
 
     // --- Podrška (Poglavlje 7) ---
     ['slug' => 'resursi',                  'title' => 'Resursi',                    'iso_ref' => 'Klauzula 7.1',              'group' => 'Podrška'],
