@@ -7,8 +7,12 @@
  * redova iz management_review_actions za taj pregled, spojenih LEFT
  * JOIN-om sa personnel radi owner_name; može biti prazan niz) već
  * postavljeni pre uključivanja ovog fajla - deli scope sa foreach
- * petljom iz koje se poziva. Takođe očekuje $activePersonnelOptions,
- * postavljen jednom u pregled-menadzmenta.php pre foreach petlje.
+ * petljom iz koje se poziva.
+ *
+ * "+ Dodaj radnju" ne otvara više ugrađenu formu u kartici - otvara
+ * zajednički modal na nivou stranice (modules/pregled-menadzmenta.php).
+ * Status pojedinačne radnje ostaje ugrađena forma (jednostavan
+ * dropdown + dugme) - isti princip kao status kod ciljeva i rizika.
  *
  * Prikazuju se samo popunjena polja od sedam 9.3(a)-(g) ulaza, da se
  * prazan pregled ne prikaže kao gomila praznih naslova.
@@ -33,6 +37,19 @@ $reviewFields = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title">Pregled <?= htmlspecialchars($review['review_date']) ?></span>
+        <button type="button" class="btn-secondary"
+            onclick='openEditReviewModal(<?= json_encode([
+                "id"                        => (int) $review["id"],
+                "review_date"               => $review["review_date"],
+                "attendees"                 => $review["attendees"] ?? "",
+                "previous_actions_status"   => $review["previous_actions_status"] ?? "",
+                "context_changes"           => $review["context_changes"] ?? "",
+                "interested_party_changes"  => $review["interested_party_changes"] ?? "",
+                "performance_summary"       => $review["performance_summary"] ?? "",
+                "interested_party_feedback" => $review["interested_party_feedback"] ?? "",
+                "risk_treatment_status"     => $review["risk_treatment_status"] ?? "",
+                "improvement_opportunities" => $review["improvement_opportunities"] ?? "",
+            ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
     </div>
 
     <?php if (!empty($review['attendees'])): ?>
@@ -89,35 +106,10 @@ $reviewFields = [
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="add_action">
-        <input type="hidden" name="management_review_id" value="<?= (int) $review['id'] ?>">
+    <button type="button" class="btn-secondary"
+        onclick='openActionModal(<?= (int) $review['id'] ?>, <?= json_encode('Pregled ' . $review['review_date'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>+ Dodaj radnju</button>
 
-        <div class="form-row">
-            <label for="action_description_<?= (int) $review['id'] ?>">Opis radnje</label>
-            <textarea name="action_description" id="action_description_<?= (int) $review['id'] ?>" rows="2" required
-                placeholder="npr. Ažurirati registar rizika sa novim pretnjama identifikovanim ovog kvartala."></textarea>
-        </div>
-
-        <div class="form-row">
-            <label for="owner_id_<?= (int) $review['id'] ?>">Nosilac (opciono)</label>
-            <select name="owner_id" id="owner_id_<?= (int) $review['id'] ?>">
-                <option value="">Nije dodeljen</option>
-                <?php foreach ($activePersonnelOptions as $option): ?>
-                    <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-row">
-            <label for="due_date_<?= (int) $review['id'] ?>">Rok (opciono)</label>
-            <input type="date" name="due_date" id="due_date_<?= (int) $review['id'] ?>">
-        </div>
-
-        <button type="submit" class="btn-secondary">Dodaj radnju</button>
-    </form>
-
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj pregled i sve njegove radnje?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj pregled i sve njegove radnje?');">
         <input type="hidden" name="action" value="delete_review">
         <input type="hidden" name="id" value="<?= (int) $review['id'] ?>">
         <button type="submit" class="btn-delete">Obriši pregled</button>

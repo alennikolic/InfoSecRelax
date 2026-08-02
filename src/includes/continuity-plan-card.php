@@ -27,9 +27,19 @@ $isTestOverdue = !empty($plan['next_test_due']) && $plan['next_test_due'] < date
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($plan['scenario']) ?></span>
-        <span class="status-badge <?= htmlspecialchars($testResultTone[$plan['test_result']] ?? 'is-neutral') ?>">
-            <?= htmlspecialchars($testResultLabels[$plan['test_result']] ?? $plan['test_result']) ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($testResultTone[$plan['test_result']] ?? 'is-neutral') ?>">
+                <?= htmlspecialchars($testResultLabels[$plan['test_result']] ?? $plan['test_result']) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditPlanModal(<?= json_encode([
+                    "id"               => (int) $plan["id"],
+                    "scenario"         => $plan["scenario"],
+                    "plan_description" => $plan["plan_description"],
+                    "owner_id"         => $plan["owner_id"] ?? "",
+                    "next_test_due"    => $plan["next_test_due"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if ($isTestOverdue): ?>
@@ -52,34 +62,10 @@ $isTestOverdue = !empty($plan['next_test_due']) && $plan['next_test_due'] < date
         <?php endif; ?>
     </p>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="record_test">
-        <input type="hidden" name="id" value="<?= (int) $plan['id'] ?>">
+    <button type="button" class="btn-secondary"
+        onclick='openTestModal(<?= (int) $plan['id'] ?>, <?= json_encode($plan['scenario'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Zabeleži test</button>
 
-        <div class="form-row">
-            <label for="test_result_<?= (int) $plan['id'] ?>">Rezultat testa</label>
-            <select name="test_result" id="test_result_<?= (int) $plan['id'] ?>" required>
-                <option value="uspesno">Uspešno</option>
-                <option value="delimicno_uspesno">Delimično uspešno</option>
-                <option value="neuspesno">Neuspešno</option>
-            </select>
-        </div>
-
-        <div class="form-row">
-            <label for="last_tested_at_<?= (int) $plan['id'] ?>">Datum testa</label>
-            <input type="date" name="last_tested_at" id="last_tested_at_<?= (int) $plan['id'] ?>" required
-                value="<?= date('Y-m-d') ?>">
-        </div>
-
-        <div class="form-row">
-            <label for="next_test_due_<?= (int) $plan['id'] ?>">Sledeći test dospeva (opciono)</label>
-            <input type="date" name="next_test_due" id="next_test_due_<?= (int) $plan['id'] ?>">
-        </div>
-
-        <button type="submit" class="btn-secondary">Zabeleži test</button>
-    </form>
-
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj plan kontinuiteta?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj plan kontinuiteta?');">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="id" value="<?= (int) $plan['id'] ?>">
         <button type="submit" class="btn-delete">Obriši</button>

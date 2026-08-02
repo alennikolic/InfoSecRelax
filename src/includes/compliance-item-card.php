@@ -36,9 +36,20 @@ $isReviewOverdue = !empty($item['next_review_due']) && $item['next_review_due'] 
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($item['title']) ?></span>
-        <span class="status-badge <?= htmlspecialchars($statusTone[$item['status']] ?? 'is-neutral') ?>">
-            <?= htmlspecialchars($statusLabels[$item['status']] ?? $item['status']) ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($statusTone[$item['status']] ?? 'is-neutral') ?>">
+                <?= htmlspecialchars($statusLabels[$item['status']] ?? $item['status']) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditComplianceModal(<?= json_encode([
+                    "id"              => (int) $item["id"],
+                    "control_ref"     => $item["control_ref"],
+                    "title"           => $item["title"],
+                    "description"     => $item["description"] ?? "",
+                    "owner_id"        => $item["owner_id"] ?? "",
+                    "next_review_due" => $item["next_review_due"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <p class="item-meta">
@@ -83,7 +94,7 @@ $isReviewOverdue = !empty($item['next_review_due']) && $item['next_review_due'] 
         </div>
     </form>
 
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovu stavku?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovu stavku?');">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="id" value="<?= (int) $item['id'] ?>">
         <button type="submit" class="btn-delete">Obriši</button>

@@ -6,9 +6,15 @@
  *
  * Jedna tabela (security_events) pokriva ceo ciklus - prijava (A.5.24),
  * procena (A.5.25), koren uzroka kao pouka (A.5.27) i referenca na
- * dokaze (A.5.28) - u skladu sa komentarom u db/init.sql. Odgovor na
- * incident (A.5.26) ovde nije poseban korak/tabela, nego se opisuje
- * kroz koren uzroka i status.
+ * dokaze (A.5.28). Odgovor na incident (A.5.26) ovde nije poseban
+ * korak/tabela, nego se opisuje kroz koren uzroka i status.
+ *
+ * Prijava je namerno minimalna (opis + ko prijavljuje, opciono) - modal
+ * za "+ Prijavi događaj" i "Uredi" menjaju samo ta dva polja. Procena
+ * (ishod, ozbiljnost, koren uzroka, dokazi) je poseban modal ("Pokreni
+ * procenu", otvoren dugmetom u kartici) - rezultati ostaju prikazani u
+ * telu kartice bez obzira da li je modal otvoren, menja se samo to gde
+ * živi FORMA za unos.
  *
  * Formalne korektivne mere (corrective_actions, Klauzula 10.2) su
  * namerno van obima ovog modula - ta tabela je deljena i sa
@@ -19,9 +25,12 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../includes/help-content.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
+
+$pageSlug = 'incidenti';
 
 $errors = [];
 
@@ -58,6 +67,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add')
             'org_id'      => $organizationId,
             'reported_by' => $reportedByValue,
             'description' => $description,
+        ]);
+
+        header('Location: ?page=incidenti');
+        exit;
+    }
+}
+
+// --- Ažuriranje prijave (samo opis i ko prijavljuje - NE dira procenu) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_report') {
+    $id          = (int) ($_POST['id'] ?? 0);
+    $description = trim($_POST['description'] ?? '');
+    $reportedBy  = trim($_POST['reported_by'] ?? '');
+
+    if ($description === '') {
+        $errors[] = 'Opis događaja je obavezan.';
+    }
+
+    $reportedByValue = null;
+    if ($reportedBy !== '') {
+        $reportedByValue = (int) $reportedBy;
+        $personCheck = $pdo->prepare('SELECT id FROM personnel WHERE id = :id AND organization_id = :org_id');
+        $personCheck->execute(['id' => $reportedByValue, 'org_id' => $organizationId]);
+
+        if ($personCheck->fetchColumn() === false) {
+            $errors[] = 'Osoba koja prijavljuje nije pronađena.';
+            $reportedByValue = null;
+        }
+    }
+
+    if (empty($errors)) {
+        $stmt = $pdo->prepare(
+            'UPDATE security_events SET description = :description, reported_by = :reported_by
+             WHERE id = :id AND organization_id = :org_id'
+        );
+        $stmt->execute([
+            'description' => $description,
+            'reported_by' => $reportedByValue,
+            'id'          => $id,
+            'org_id'      => $organizationId,
         ]);
 
         header('Location: ?page=incidenti');
@@ -164,13 +212,10 @@ $eventsStmt = $pdo->prepare(
 );
 $eventsStmt->execute(['org_id' => $organizationId]);
 $allEvents = $eventsStmt->fetchAll();
-?>
 
-<p class="module-intro">
-    A.5.24-5.28 traže planiran način prijave bezbednosnih događaja, njihovu
-    procenu, i učenje iz potvrđenih incidenata kroz analizu uzroka. Formalne
-    korektivne mere (Klauzula 10.2) dolaze u budućem modulu.
-</p>
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
+?>
 
 <?php if (!empty($errors)): ?>
 <div class="alert alert-error">
@@ -180,27 +225,10 @@ $allEvents = $eventsStmt->fetchAll();
 </div>
 <?php endif; ?>
 
-<form method="post" class="factor-form">
-    <input type="hidden" name="action" value="add">
-
-    <div class="form-row">
-        <label for="description">Opis događaja</label>
-        <textarea name="description" id="description" rows="3" required
-            placeholder="npr. Zaposleni je prijavio sumnjiv e-mail koji traži podatke za prijavu na sistem."></textarea>
-    </div>
-
-    <div class="form-row">
-        <label for="reported_by">Prijavio (opciono, ostavi prazno za anonimnu prijavu)</label>
-        <select name="reported_by" id="reported_by">
-            <option value="">Anonimno</option>
-            <?php foreach ($activePersonnelOptions as $option): ?>
-                <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-
-    <button type="submit" class="btn-primary">Prijavi događaj</button>
-</form>
+<div class="toolbar">
+    <button type="button" class="btn-primary" onclick="openAddEventModal()">+ Prijavi događaj</button>
+    <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+</div>
 
 <?php if (empty($allEvents)): ?>
     <p class="empty-state">Još uvek nema prijavljenih događaja.</p>
@@ -209,3 +237,150 @@ $allEvents = $eventsStmt->fetchAll();
         <?php include __DIR__ . '/../includes/incident-card.php'; ?>
     <?php endforeach; ?>
 <?php endif; ?>
+
+<div class="modal-overlay" id="event-modal-overlay" onclick="closeEventModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="event-modal-title">Prijavi događaj</span>
+            <button type="button" class="modal-close" onclick="closeEventModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post" id="event-modal-form">
+            <input type="hidden" name="action" id="event-modal-action" value="add">
+            <input type="hidden" name="id" id="event-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_description">Opis događaja</label>
+                <textarea name="description" id="modal_description" rows="3" required
+                    placeholder="npr. Zaposleni je prijavio sumnjiv e-mail koji traži podatke za prijavu na sistem."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_reported_by">Prijavio (opciono, ostavi prazno za anonimnu prijavu)</label>
+                <select name="reported_by" id="modal_reported_by">
+                    <option value="">Anonimno</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromEventModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeEventModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="assessment-modal-overlay" onclick="closeAssessmentModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title">Ažuriraj procenu</span>
+            <button type="button" class="modal-close" onclick="closeAssessmentModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post">
+            <input type="hidden" name="action" value="update_assessment">
+            <input type="hidden" name="id" id="assessment-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_assessment_outcome">Ishod procene</label>
+                <select name="assessment_outcome" id="modal_assessment_outcome">
+                    <option value="na_cekanju">Na čekanju</option>
+                    <option value="lazna_uzbuna">Lažna uzbuna</option>
+                    <option value="potvrdjen_incident">Potvrđen incident</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_severity">Ozbiljnost</label>
+                <select name="severity" id="modal_severity">
+                    <option value="">Nije određeno</option>
+                    <option value="nizak">Nizak</option>
+                    <option value="srednji">Srednji</option>
+                    <option value="visok">Visok</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_root_cause">Koren uzroka (opciono)</label>
+                <textarea name="root_cause" id="modal_root_cause" rows="2"
+                    placeholder="npr. Zaposleni nisu prošli obuku o prepoznavanju phishing e-mailova."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_evidence_reference">Referenca na dokaze (opciono)</label>
+                <input type="text" name="evidence_reference" id="modal_evidence_reference"
+                    placeholder="npr. Snimak ekrana sačuvan u /dokazi/incident-42.png">
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromAssessmentModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeAssessmentModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
+
+<script>
+function openAddEventModal() {
+    document.getElementById('event-modal-title').textContent = 'Prijavi događaj';
+    document.getElementById('event-modal-action').value = 'add';
+    document.getElementById('event-modal-id').value = '';
+    document.getElementById('modal_description').value = '';
+    document.getElementById('modal_reported_by').value = '';
+    document.getElementById('event-modal-overlay').classList.add('is-open');
+}
+
+function openEditEventModal(event_) {
+    document.getElementById('event-modal-title').textContent = 'Uredi prijavu';
+    document.getElementById('event-modal-action').value = 'update_report';
+    document.getElementById('event-modal-id').value = event_.id;
+    document.getElementById('modal_description').value = event_.description;
+    document.getElementById('modal_reported_by').value = event_.reported_by;
+    document.getElementById('event-modal-overlay').classList.add('is-open');
+}
+
+function closeEventModal() {
+    document.getElementById('event-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromEventModal() {
+    closeEventModal();
+    openHelpModal();
+}
+
+function openAssessmentModal(event_) {
+    document.getElementById('assessment-modal-id').value = event_.id;
+    document.getElementById('modal_assessment_outcome').value = event_.assessment_outcome;
+    document.getElementById('modal_severity').value = event_.severity;
+    document.getElementById('modal_root_cause').value = event_.root_cause;
+    document.getElementById('modal_evidence_reference').value = event_.evidence_reference;
+    document.getElementById('assessment-modal-overlay').classList.add('is-open');
+}
+
+function closeAssessmentModal() {
+    document.getElementById('assessment-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromAssessmentModal() {
+    closeAssessmentModal();
+    openHelpModal();
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeEventModal();
+        closeAssessmentModal();
+    }
+});
+</script>

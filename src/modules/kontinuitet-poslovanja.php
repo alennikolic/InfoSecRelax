@@ -5,20 +5,25 @@
  * A.5.29-5.30: Bezbednost informacija tokom poremećaja / Spremnost IKT
  * sistema za kontinuitet poslovanja.
  *
- * Koristi novu tabelu continuity_plans - videti
- * db/migrations/002_add_continuity_plans.sql. Testiranje plana je
- * zaseban korak od dodavanja/brisanja (isti princip kao dodavanje nove
- * verzije dokumenta) - "Zabeleži test" upisuje rezultat, datum i
- * sledeći rok odjednom, jer testiranje suštinski jeste događaj u
- * vremenu, ne stanje koje se prosto uključuje/isključuje.
+ * Koristi tabelu continuity_plans - videti
+ * db/migrations/002_add_continuity_plans.sql. Isti obrazac kao ostali
+ * moduli: toolbar sa Pomoć desno, modal za dodavanje/uređivanje plana.
+ * Testiranje plana je zaseban modal ("Zabeleži test", otvoren dugmetom
+ * u kartici) - upisuje rezultat, datum i sledeći rok odjednom, jer
+ * testiranje suštinski jeste događaj u vremenu, ne stanje koje se
+ * prosto uključuje/isključuje - isti princip kao "Pokreni procenu" u
+ * incidenti.php.
  */
 
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../includes/help-content.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
+
+$pageSlug = 'kontinuitet-poslovanja';
 
 $errors = [];
 
@@ -61,6 +66,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add')
             'plan_description' => $planDescription,
             'owner_id'         => $ownerIdValue,
             'next_test_due'    => $nextTestDue !== '' ? $nextTestDue : null,
+        ]);
+
+        header('Location: ?page=kontinuitet-poslovanja');
+        exit;
+    }
+}
+
+// --- Ažuriranje postojećeg plana (NE menja rezultate testiranja) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update') {
+    $id              = (int) ($_POST['id'] ?? 0);
+    $scenario        = trim($_POST['scenario'] ?? '');
+    $planDescription = trim($_POST['plan_description'] ?? '');
+    $ownerId         = trim($_POST['owner_id'] ?? '');
+    $nextTestDue     = trim($_POST['next_test_due'] ?? '');
+
+    if ($scenario === '') {
+        $errors[] = 'Scenario je obavezan.';
+    }
+    if ($planDescription === '') {
+        $errors[] = 'Opis plana je obavezan.';
+    }
+
+    $ownerIdValue = null;
+    if ($ownerId !== '') {
+        $ownerIdValue = (int) $ownerId;
+        $personCheck = $pdo->prepare('SELECT id FROM personnel WHERE id = :id AND organization_id = :org_id');
+        $personCheck->execute(['id' => $ownerIdValue, 'org_id' => $organizationId]);
+
+        if ($personCheck->fetchColumn() === false) {
+            $errors[] = 'Izabrani nosilac nije pronađen.';
+            $ownerIdValue = null;
+        }
+    }
+
+    if (empty($errors)) {
+        $stmt = $pdo->prepare(
+            'UPDATE continuity_plans
+             SET scenario = :scenario, plan_description = :plan_description, owner_id = :owner_id,
+                 next_test_due = :next_test_due
+             WHERE id = :id AND organization_id = :org_id'
+        );
+        $stmt->execute([
+            'scenario'         => $scenario,
+            'plan_description' => $planDescription,
+            'owner_id'         => $ownerIdValue,
+            'next_test_due'    => $nextTestDue !== '' ? $nextTestDue : null,
+            'id'               => $id,
+            'org_id'           => $organizationId,
         ]);
 
         header('Location: ?page=kontinuitet-poslovanja');
@@ -129,13 +182,10 @@ $plansStmt = $pdo->prepare(
 );
 $plansStmt->execute(['org_id' => $organizationId]);
 $allPlans = $plansStmt->fetchAll();
-?>
 
-<p class="module-intro">
-    A.5.29 traži da bezbednost informacija ostane održana tokom poremećaja, a
-    A.5.30 spremnost IKT sistema za kontinuitet - plan za svaki realan scenario
-    prekida, i redovno testiranje da li taj plan zaista radi.
-</p>
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
+?>
 
 <?php if (!empty($errors)): ?>
 <div class="alert alert-error">
@@ -145,41 +195,10 @@ $allPlans = $plansStmt->fetchAll();
 </div>
 <?php endif; ?>
 
-<form method="post" class="factor-form">
-    <input type="hidden" name="action" value="add">
-
-    <div class="form-row">
-        <label for="scenario">Scenario</label>
-        <input type="text" name="scenario" id="scenario" required
-            placeholder="npr. Nestanak struje u kancelariji, Pad glavnog servera">
-    </div>
-
-    <div class="form-row">
-        <label for="plan_description">Plan odgovora</label>
-        <textarea name="plan_description" id="plan_description" rows="3" required
-            placeholder="npr. Prelazak na rad od kuće preko VPN-a, kritični sistemi hostovani u cloud-u sa 99.9% dostupnosti."></textarea>
-    </div>
-
-    <div class="form-row">
-        <label for="owner_id">Nosilac plana (opciono)</label>
-        <select name="owner_id" id="owner_id">
-            <option value="">Nije dodeljen</option>
-            <?php foreach ($activePersonnelOptions as $option): ?>
-                <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <?php if (empty($activePersonnelOptions)): ?>
-            <p class="item-meta">Nema unetih aktivnih osoba - prvo ih dodaj na stranici "Zaposleni i saradnici".</p>
-        <?php endif; ?>
-    </div>
-
-    <div class="form-row">
-        <label for="next_test_due">Sledeći test dospeva (opciono)</label>
-        <input type="date" name="next_test_due" id="next_test_due">
-    </div>
-
-    <button type="submit" class="btn-primary">Dodaj plan</button>
-</form>
+<div class="toolbar">
+    <button type="button" class="btn-primary" onclick="openAddPlanModal()">+ Dodaj plan</button>
+    <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+</div>
 
 <?php if (empty($allPlans)): ?>
     <p class="empty-state">Još uvek nema unetih planova kontinuiteta.</p>
@@ -188,3 +207,156 @@ $allPlans = $plansStmt->fetchAll();
         <?php include __DIR__ . '/../includes/continuity-plan-card.php'; ?>
     <?php endforeach; ?>
 <?php endif; ?>
+
+<div class="modal-overlay" id="plan-modal-overlay" onclick="closePlanModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="plan-modal-title">Dodaj plan</span>
+            <button type="button" class="modal-close" onclick="closePlanModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post" id="plan-modal-form">
+            <input type="hidden" name="action" id="plan-modal-action" value="add">
+            <input type="hidden" name="id" id="plan-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_scenario">Scenario</label>
+                <input type="text" name="scenario" id="modal_scenario" required
+                    placeholder="npr. Nestanak struje u kancelariji, Pad glavnog servera">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_plan_description">Plan odgovora</label>
+                <textarea name="plan_description" id="modal_plan_description" rows="3" required
+                    placeholder="npr. Prelazak na rad od kuće preko VPN-a, kritični sistemi hostovani u cloud-u sa 99.9% dostupnosti."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_owner_id">Nosilac plana (opciono)</label>
+                <select name="owner_id" id="modal_owner_id">
+                    <option value="">Nije dodeljen</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (empty($activePersonnelOptions)): ?>
+                    <p class="item-meta">Nema unetih aktivnih osoba - prvo ih dodaj na stranici "Zaposleni i saradnici".</p>
+                <?php endif; ?>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_next_test_due">Sledeći test dospeva (opciono)</label>
+                <input type="date" name="next_test_due" id="modal_next_test_due">
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromPlanModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closePlanModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="test-modal-overlay" onclick="closeTestModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="test-modal-title">Zabeleži test</span>
+            <button type="button" class="modal-close" onclick="closeTestModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post">
+            <input type="hidden" name="action" value="record_test">
+            <input type="hidden" name="id" id="test-modal-plan-id" value="">
+
+            <div class="form-row">
+                <label for="modal_test_result">Rezultat testa</label>
+                <select name="test_result" id="modal_test_result" required>
+                    <option value="uspesno">Uspešno</option>
+                    <option value="delimicno_uspesno">Delimično uspešno</option>
+                    <option value="neuspesno">Neuspešno</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_last_tested_at">Datum testa</label>
+                <input type="date" name="last_tested_at" id="modal_last_tested_at" required>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_next_test_due_record">Sledeći test dospeva (opciono)</label>
+                <input type="date" name="next_test_due" id="modal_next_test_due_record">
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromTestModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeTestModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
+
+<script>
+function openAddPlanModal() {
+    document.getElementById('plan-modal-title').textContent = 'Dodaj plan';
+    document.getElementById('plan-modal-action').value = 'add';
+    document.getElementById('plan-modal-id').value = '';
+    document.getElementById('modal_scenario').value = '';
+    document.getElementById('modal_plan_description').value = '';
+    document.getElementById('modal_owner_id').value = '';
+    document.getElementById('modal_next_test_due').value = '';
+    document.getElementById('plan-modal-overlay').classList.add('is-open');
+}
+
+function openEditPlanModal(plan) {
+    document.getElementById('plan-modal-title').textContent = 'Uredi plan';
+    document.getElementById('plan-modal-action').value = 'update';
+    document.getElementById('plan-modal-id').value = plan.id;
+    document.getElementById('modal_scenario').value = plan.scenario;
+    document.getElementById('modal_plan_description').value = plan.plan_description;
+    document.getElementById('modal_owner_id').value = plan.owner_id;
+    document.getElementById('modal_next_test_due').value = plan.next_test_due;
+    document.getElementById('plan-modal-overlay').classList.add('is-open');
+}
+
+function closePlanModal() {
+    document.getElementById('plan-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromPlanModal() {
+    closePlanModal();
+    openHelpModal();
+}
+
+function openTestModal(planId, planScenario) {
+    document.getElementById('test-modal-title').textContent = 'Zabeleži test — ' + planScenario;
+    document.getElementById('test-modal-plan-id').value = planId;
+    document.getElementById('modal_test_result').value = 'uspesno';
+    document.getElementById('modal_last_tested_at').value = '<?= date('Y-m-d') ?>';
+    document.getElementById('modal_next_test_due_record').value = '';
+    document.getElementById('test-modal-overlay').classList.add('is-open');
+}
+
+function closeTestModal() {
+    document.getElementById('test-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromTestModal() {
+    closeTestModal();
+    openHelpModal();
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closePlanModal();
+        closeTestModal();
+    }
+});
+</script>

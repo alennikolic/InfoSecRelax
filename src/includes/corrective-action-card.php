@@ -27,9 +27,19 @@ $statusTone = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title">Korektivna mera od <?= htmlspecialchars(substr((string) $correctiveAction['created_at'], 0, 10)) ?></span>
-        <span class="status-badge <?= htmlspecialchars($statusTone[$correctiveAction['status']] ?? 'is-neutral') ?>">
-            <?= htmlspecialchars($statusLabels[$correctiveAction['status']] ?? $correctiveAction['status']) ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($statusTone[$correctiveAction['status']] ?? 'is-neutral') ?>">
+                <?= htmlspecialchars($statusLabels[$correctiveAction['status']] ?? $correctiveAction['status']) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditActionModal(<?= json_encode([
+                    "id"                      => (int) $correctiveAction["id"],
+                    "description"             => $correctiveAction["description"],
+                    "root_cause_generalized"  => $correctiveAction["root_cause_generalized"] ?? "",
+                    "owner_id"                => $correctiveAction["owner_id"] ?? "",
+                    "due_date"                => $correctiveAction["due_date"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <p><?= nl2br(htmlspecialchars($correctiveAction['description'])) ?></p>
@@ -80,7 +90,7 @@ $statusTone = [
         </div>
     </form>
 
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovu korektivnu meru?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovu korektivnu meru?');">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="id" value="<?= (int) $correctiveAction['id'] ?>">
         <button type="submit" class="btn-delete">Obriši</button>
