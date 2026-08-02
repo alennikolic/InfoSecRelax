@@ -749,6 +749,12 @@ body {
     margin-top: 12px;
 }
 
+.toolbar-right {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
 .modal-box-wide {
     max-width: 640px;
 }
