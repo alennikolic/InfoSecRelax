@@ -133,22 +133,6 @@ CREATE TABLE scope_statements (
     INDEX idx_scope_org (organization_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE scope_exclusions (
-    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    scope_statement_id  BIGINT UNSIGNED NOT NULL,
-    excluded_item        VARCHAR(255) NOT NULL,
-    justification        TEXT NOT NULL,
-    FOREIGN KEY (scope_statement_id) REFERENCES scope_statements(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE third_party_dependencies (
-    id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    scope_statement_id  BIGINT UNSIGNED NOT NULL,
-    description         TEXT NOT NULL COMMENT 'Klauzula 4.3 - interfejsi i zavisnosti od trecih strana',
-    managed_via         VARCHAR(255) NULL COMMENT 'npr. ugovor o nivou usluge, DPA',
-    FOREIGN KEY (scope_statement_id) REFERENCES scope_statements(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- =====================================================================
 -- MODUL 2: LIDERSTVO I DOKUMENTACIJA (Klauzula 5, 7.5, A.5.1-5.4)
 -- =====================================================================
