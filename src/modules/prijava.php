@@ -42,7 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="demo-hint">
         <p><strong>Brzo testiranje?</strong> Prijavi se demo nalogom:</p>
-        <p>Email: <code>demo@demo.local</code> &nbsp;·&nbsp; Lozinka: <code>AiSSPhTjXRFZox6eXZfH</code></p>
+        <p class="demo-hint-row">
+            <span>Email: <code id="demo-hint-email">demo@demo.local</code></span>
+            <button type="button" class="demo-hint-copy" onclick="copyDemoHintValue('demo-hint-email', this)">Kopiraj</button>
+        </p>
+        <p class="demo-hint-row">
+            <span>Lozinka: <code id="demo-hint-password">AiSSPhTjXRFZox6eXZfH</code></span>
+            <button type="button" class="demo-hint-copy" onclick="copyDemoHintValue('demo-hint-password', this)">Kopiraj</button>
+        </p>
     </div>
 
     <?php if ($loginError !== null): ?>
@@ -64,3 +71,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit" class="btn-primary">Prijavi se</button>
     </form>
 </div>
+
+<script>
+    /**
+     * Kopira sadržaj <code> elementa (demo email/lozinka) u klipbord i
+     * privremeno menja tekst dugmeta u "Kopirano!" radi potvrde. Prvo
+     * pokušava Clipboard API (radi na localhost i preko HTTPS-a bez
+     * dodatnih dozvola); ako nije dostupan (stariji brauzer, ne-bezbedan
+     * kontekst), pada nazad na document.execCommand('copy') preko
+     * privremenog, nevidljivog textarea elementa.
+     */
+    function copyDemoHintValue(elementId, buttonEl) {
+        var text = document.getElementById(elementId).textContent;
+        var resetLabel = buttonEl.textContent;
+
+        function showCopied() {
+            buttonEl.textContent = 'Kopirano!';
+            setTimeout(function () {
+                buttonEl.textContent = resetLabel;
+            }, 1500);
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(showCopied);
+            return;
+        }
+
+        var tempInput = document.createElement('textarea');
+        tempInput.value = text;
+        tempInput.style.position = 'fixed';
+        tempInput.style.opacity = '0';
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        showCopied();
+    }
+</script>
