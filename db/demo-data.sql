@@ -141,12 +141,6 @@ INSERT INTO interested_party_requirements (interested_party_id, requirement, add
 INSERT INTO scope_statements (id, organization_id, scope_text, version, approved_by, approved_at, effective_from, is_current) VALUES
 (1, 1, 'ISMS obuhvata sve informacione sisteme, osoblje i procese koji podržavaju pružanje knjigovodstvenih i računovodstvenih usluga klijentima agencije Bilans Plus, uključujući obradu finansijskih podataka, obračun zarada, poreske prijave i komunikaciju sa klijentima, u kancelariji u Beogradu i pri radu od kuće zaposlenih.', '1.0', 1, '2026-02-01', '2026-02-01', TRUE);
 
-INSERT INTO scope_exclusions (scope_statement_id, excluded_item, justification) VALUES
-(1, 'Lični uređaji zaposlenih korišćeni isključivo u privatne svrhe', 'Van kontrole agencije i ne koriste se za pristup podacima klijenata.');
-
-INSERT INTO third_party_dependencies (scope_statement_id, description, managed_via) VALUES
-(1, 'Hosting cloud računovodstvenog softvera kod eksternog dobavljača.', 'Ugovor o nivou usluge (SLA) i ugovor o obradi podataka (DPA)'),
-(1, 'Bankarske usluge za elektronsko plaćanje u ime klijenata.', 'Ugovor sa bankom, dvofaktorska autentifikacija');
 
 -- =====================================================================
 -- KORAK 7: Dokumenti + verzije (7.5) - videti dokumenti.php
