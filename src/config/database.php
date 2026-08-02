@@ -57,16 +57,31 @@ function getDbConnection(): PDO
 if (!function_exists('ensureDefaultOrganization')) {
 /**
  * Istorijsko ime iz perioda pre multi-tenant prijave - i dalje se
- * poziva iz mnogo modula. Sada samo garantuje da organizacija sa id=1
- * postoji (korisno za razvojno okruženje / prvu organizaciju), ali
- * VIŠE NE ODREĐUJE koja je organizacija "trenutna" - to sada radi
- * isključivo config/auth.php preko sesije ulogovanog korisnika
- * (currentUser()['organization_id']). Moduli treba postepeno da pređu
- * sa "ensureDefaultOrganization($pdo)" na
- * "requireAuth()['organization_id']" (videti config/auth.php).
+ * poziva iz mnogo modula. Otkako postoji RBAC (config/auth.php), ova
+ * funkcija vraća STVARNI organization_id ulogovanog organizacionog
+ * korisnika (preko currentUser()) - NE više uvek 1.
+ *
+ * Ovo je namerno urađeno ovde, u jednoj funkciji, umesto da se svaki
+ * od ~25 postojećih modula pojedinačno menja da poziva
+ * requireAuth()['organization_id'] - isti poziv, isto ime funkcije,
+ * isti povratni tip, samo ispravan sadržaj. Svaki modul koji već radi
+ * "$organizationId = ensureDefaultOrganization($pdo);" sada automatski
+ * upisuje/čita podatke SVOJE firme, bez ijedne izmene u tom modulu.
+ *
+ * function_exists('currentUser') je odbrana za slučaj da neko pozove
+ * ovu funkciju bez da je config/auth.php uopšte učitan (npr. buduća
+ * CLI skripta van web konteksta) - tada se vraća na staro ponašanje
+ * (organizacija id=1, kreirana ako ne postoji), umesto fatalne greške.
  */
 function ensureDefaultOrganization(PDO $pdo): int
 {
+    if (function_exists('currentUser')) {
+        $user = currentUser();
+        if ($user !== null && $user['organization_id'] !== null) {
+            return (int) $user['organization_id'];
+        }
+    }
+
     $pdo->exec("INSERT IGNORE INTO organizations (id, name) VALUES (1, 'Moja firma')");
     return 1;
 }
