@@ -9,10 +9,14 @@
  * postojeći red ne briše niti menja - scope_statements čuva istoriju
  * verzija. Dodavanje nove verzije samo obeleži prethodnu kao
  * is_current = FALSE i upiše novi red kao is_current = TRUE (u jednoj
- * transakciji). Izuzeci (scope_exclusions) i zavisnosti od trećih
- * strana (third_party_dependencies) vezani su za konkretnu verziju
- * (scope_statement_id), pa svaka verzija čuva svoj tadašnji snimak -
- * to je namerno, to je sam trag audita kroz vreme, ne greška.
+ * transakciji). Forma za novu verziju je modal otvoren dugmetom na
+ * vrhu stranice, isti obrazac kao kontekst.php/zainteresovane-strane.php.
+ *
+ * Izuzeci i zavisnosti od trećih strana nemaju više svoju strukturu
+ * ovde - pišu se direktno u tekstu obima, prirodnim jezikom. Tabele
+ * scope_exclusions i third_party_dependencies ostaju u šemi (ne brišu
+ * se, da se ne izgubi eventualno već uneti sadržaj), ali ih ova
+ * stranica više ne čita niti upisuje.
  *
  * approved_by (FK ka personnel) namerno nije u formi - modul za
  * zaposlene (personnel) još ne postoji, pa nema iz čega da se bira.
@@ -22,9 +26,12 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../includes/help-content.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
+
+$pageSlug = 'obim';
 
 $errors = [];
 
@@ -70,130 +77,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_v
     }
 }
 
-// --- Dodavanje izuzetka trenutnoj (aktuelnoj) verziji ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_exclusion') {
-    $scopeStatementId = (int) ($_POST['scope_statement_id'] ?? 0);
-    $excludedItem     = trim($_POST['excluded_item'] ?? '');
-    $justification    = trim($_POST['justification'] ?? '');
-
-    $scopeCheck = $pdo->prepare(
-        'SELECT id FROM scope_statements WHERE id = :id AND organization_id = :org_id AND is_current = TRUE'
-    );
-    $scopeCheck->execute(['id' => $scopeStatementId, 'org_id' => $organizationId]);
-
-    if ($scopeCheck->fetchColumn() === false) {
-        $errors[] = 'Nepoznata ili zastarela verzija obima.';
-    }
-    if ($excludedItem === '') {
-        $errors[] = 'Naziv izuzete stavke je obavezan.';
-    }
-    if ($justification === '') {
-        $errors[] = 'Obrazloženje izuzeća je obavezno.';
-    }
-
-    if (empty($errors)) {
-        $stmt = $pdo->prepare(
-            'INSERT INTO scope_exclusions (scope_statement_id, excluded_item, justification)
-             VALUES (:scope_id, :excluded_item, :justification)'
-        );
-        $stmt->execute([
-            'scope_id'      => $scopeStatementId,
-            'excluded_item' => $excludedItem,
-            'justification' => $justification,
-        ]);
-
-        header('Location: ?page=obim');
-        exit;
-    }
-}
-
-// --- Brisanje izuzetka ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_exclusion') {
-    $id = (int) ($_POST['id'] ?? 0);
-
-    $stmt = $pdo->prepare(
-        'DELETE e FROM scope_exclusions e
-         INNER JOIN scope_statements s ON s.id = e.scope_statement_id
-         WHERE e.id = :id AND s.organization_id = :org_id'
-    );
-    $stmt->execute(['id' => $id, 'org_id' => $organizationId]);
-
-    header('Location: ?page=obim');
-    exit;
-}
-
-// --- Dodavanje zavisnosti od treće strane trenutnoj verziji ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_dependency') {
-    $scopeStatementId = (int) ($_POST['scope_statement_id'] ?? 0);
-    $description      = trim($_POST['description'] ?? '');
-    $managedVia       = trim($_POST['managed_via'] ?? '');
-
-    $scopeCheck = $pdo->prepare(
-        'SELECT id FROM scope_statements WHERE id = :id AND organization_id = :org_id AND is_current = TRUE'
-    );
-    $scopeCheck->execute(['id' => $scopeStatementId, 'org_id' => $organizationId]);
-
-    if ($scopeCheck->fetchColumn() === false) {
-        $errors[] = 'Nepoznata ili zastarela verzija obima.';
-    }
-    if ($description === '') {
-        $errors[] = 'Opis zavisnosti je obavezan.';
-    }
-
-    if (empty($errors)) {
-        $stmt = $pdo->prepare(
-            'INSERT INTO third_party_dependencies (scope_statement_id, description, managed_via)
-             VALUES (:scope_id, :description, :managed_via)'
-        );
-        $stmt->execute([
-            'scope_id'    => $scopeStatementId,
-            'description' => $description,
-            'managed_via' => $managedVia !== '' ? $managedVia : null,
-        ]);
-
-        header('Location: ?page=obim');
-        exit;
-    }
-}
-
-// --- Brisanje zavisnosti ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_dependency') {
-    $id = (int) ($_POST['id'] ?? 0);
-
-    $stmt = $pdo->prepare(
-        'DELETE d FROM third_party_dependencies d
-         INNER JOIN scope_statements s ON s.id = d.scope_statement_id
-         WHERE d.id = :id AND s.organization_id = :org_id'
-    );
-    $stmt->execute(['id' => $id, 'org_id' => $organizationId]);
-
-    header('Location: ?page=obim');
-    exit;
-}
-
 // --- Učitavanje trenutne (aktuelne) verzije obima ---
 $currentStmt = $pdo->prepare(
     'SELECT * FROM scope_statements WHERE organization_id = :org_id AND is_current = TRUE LIMIT 1'
 );
 $currentStmt->execute(['org_id' => $organizationId]);
 $currentScope = $currentStmt->fetch();
-
-$exclusions = [];
-$dependencies = [];
-
-if ($currentScope !== false) {
-    $exclusionsStmt = $pdo->prepare(
-        'SELECT * FROM scope_exclusions WHERE scope_statement_id = :scope_id ORDER BY id'
-    );
-    $exclusionsStmt->execute(['scope_id' => $currentScope['id']]);
-    $exclusions = $exclusionsStmt->fetchAll();
-
-    $dependenciesStmt = $pdo->prepare(
-        'SELECT * FROM third_party_dependencies WHERE scope_statement_id = :scope_id ORDER BY id'
-    );
-    $dependenciesStmt->execute(['scope_id' => $currentScope['id']]);
-    $dependencies = $dependenciesStmt->fetchAll();
-}
 
 // --- Istorija ranijih verzija ---
 $historyStmt = $pdo->prepare(
@@ -203,13 +92,10 @@ $historyStmt = $pdo->prepare(
 );
 $historyStmt->execute(['org_id' => $organizationId]);
 $scopeHistory = $historyStmt->fetchAll();
-?>
 
-<p class="module-intro">
-    Klauzula 4.3 traži da na osnovu konteksta (4.1) i zahteva zainteresovanih
-    strana (4.2) odredite obim ISMS-a - koji delovi organizacije, lokacije i
-    sistemi su unutar njega, a koji su izričito isključeni i zašto.
-</p>
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
+?>
 
 <?php if (!empty($errors)): ?>
 <div class="alert alert-error">
@@ -218,6 +104,13 @@ $scopeHistory = $historyStmt->fetchAll();
     <?php endforeach; ?>
 </div>
 <?php endif; ?>
+
+<div class="toolbar">
+    <button type="button" class="btn-primary" onclick="openVersionModal()">
+        <?= $currentScope === false ? '+ Definiši obim' : '+ Nova verzija' ?>
+    </button>
+    <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+</div>
 
 <?php if ($currentScope === false): ?>
 
@@ -238,123 +131,7 @@ $scopeHistory = $historyStmt->fetchAll();
         <p class="scope-text"><?= nl2br(htmlspecialchars($currentScope['scope_text'])) ?></p>
     </div>
 
-    <div class="factor-columns">
-        <div class="factor-column">
-            <h3>Izuzeci iz obima (<?= count($exclusions) ?>)</h3>
-            <?php if (empty($exclusions)): ?>
-                <p class="empty-state">Nema unetih izuzeća.</p>
-            <?php else: ?>
-                <?php foreach ($exclusions as $exclusion): ?>
-                    <div class="factor-card">
-                        <p class="item-title"><?= htmlspecialchars($exclusion['excluded_item']) ?></p>
-                        <p><?= nl2br(htmlspecialchars($exclusion['justification'])) ?></p>
-                        <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj izuzetak?');">
-                            <input type="hidden" name="action" value="delete_exclusion">
-                            <input type="hidden" name="id" value="<?= (int) $exclusion['id'] ?>">
-                            <button type="submit" class="btn-delete">Obriši</button>
-                        </form>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-
-            <form method="post" class="subform">
-                <input type="hidden" name="action" value="add_exclusion">
-                <input type="hidden" name="scope_statement_id" value="<?= (int) $currentScope['id'] ?>">
-
-                <div class="form-row">
-                    <label for="excluded_item">Izuzeta stavka</label>
-                    <input type="text" name="excluded_item" id="excluded_item" required
-                        placeholder="npr. Ogranak u Novom Sadu">
-                </div>
-                <div class="form-row">
-                    <label for="justification">Obrazloženje</label>
-                    <textarea name="justification" id="justification" rows="2" required
-                        placeholder="npr. Ogranak ne obrađuje podatke klijenata i nema pristup produkcionim sistemima."></textarea>
-                </div>
-                <button type="submit" class="btn-secondary">Dodaj izuzetak</button>
-            </form>
-        </div>
-
-        <div class="factor-column">
-            <h3>Zavisnosti od trećih strana (<?= count($dependencies) ?>)</h3>
-            <?php if (empty($dependencies)): ?>
-                <p class="empty-state">Nema unetih zavisnosti.</p>
-            <?php else: ?>
-                <?php foreach ($dependencies as $dependency): ?>
-                    <div class="factor-card">
-                        <p class="item-title"><?= htmlspecialchars($dependency['description']) ?></p>
-                        <?php if (!empty($dependency['managed_via'])): ?>
-                            <p>Uređeno preko: <?= htmlspecialchars($dependency['managed_via']) ?></p>
-                        <?php endif; ?>
-                        <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovu zavisnost?');">
-                            <input type="hidden" name="action" value="delete_dependency">
-                            <input type="hidden" name="id" value="<?= (int) $dependency['id'] ?>">
-                            <button type="submit" class="btn-delete">Obriši</button>
-                        </form>
-                    </div>
-                <?php endforeach; ?>
-            <?php endif; ?>
-
-            <form method="post" class="subform">
-                <input type="hidden" name="action" value="add_dependency">
-                <input type="hidden" name="scope_statement_id" value="<?= (int) $currentScope['id'] ?>">
-
-                <div class="form-row">
-                    <label for="description">Opis zavisnosti</label>
-                    <textarea name="description" id="description" rows="2" required
-                        placeholder="npr. Hosting produkcionih servera kod eksternog dobavljača cloud usluga."></textarea>
-                </div>
-                <div class="form-row">
-                    <label for="managed_via">Uređeno preko (opciono)</label>
-                    <input type="text" name="managed_via" id="managed_via" placeholder="npr. Ugovor o nivou usluge (SLA)">
-                </div>
-                <button type="submit" class="btn-secondary">Dodaj zavisnost</button>
-            </form>
-        </div>
-    </div>
-
 <?php endif; ?>
-
-<div class="scope-new-version">
-    <h3><?= $currentScope === false ? 'Definiši obim' : 'Nova verzija obima' ?></h3>
-    <?php if ($currentScope !== false): ?>
-        <p class="module-intro">
-            Čuvanje nove verzije ne briše prethodnu - ona ostaje u istoriji ispod,
-            zajedno sa izuzecima i zavisnostima kakvi su bili važeći u tom trenutku.
-        </p>
-    <?php endif; ?>
-
-    <form method="post" class="factor-form">
-        <input type="hidden" name="action" value="add_version">
-
-        <div class="form-row">
-            <label for="version">Oznaka verzije</label>
-            <input type="text" name="version" id="version" required
-                value="<?= $currentScope === false ? '1.0' : '' ?>"
-                placeholder="npr. 1.0, 1.1, 2.0">
-        </div>
-
-        <div class="form-row">
-            <label for="scope_text">Tekst obima</label>
-            <textarea name="scope_text" id="scope_text" rows="4" required
-                placeholder="npr. ISMS obuhvata sve informacione sisteme, osoblje i procese koji podržavaju pružanje usluga klijentima firme, u kancelariji u Beogradu."><?= $currentScope !== false ? htmlspecialchars($currentScope['scope_text']) : '' ?></textarea>
-        </div>
-
-        <div class="form-row">
-            <label for="effective_from">Na snazi od (opciono)</label>
-            <input type="date" name="effective_from" id="effective_from">
-        </div>
-
-        <div class="form-row">
-            <label for="approved_at">Datum odobrenja (opciono)</label>
-            <input type="date" name="approved_at" id="approved_at">
-        </div>
-
-        <button type="submit" class="btn-primary">
-            <?= $currentScope === false ? 'Sačuvaj obim' : 'Sačuvaj kao novu verziju' ?>
-        </button>
-    </form>
-</div>
 
 <?php if (!empty($scopeHistory)): ?>
 <div class="scope-history">
@@ -372,3 +149,76 @@ $scopeHistory = $historyStmt->fetchAll();
     <?php endforeach; ?>
 </div>
 <?php endif; ?>
+
+<div class="modal-overlay" id="version-modal-overlay" onclick="closeVersionModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title"><?= $currentScope === false ? 'Definiši obim' : 'Nova verzija obima' ?></span>
+            <button type="button" class="modal-close" onclick="closeVersionModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <?php if ($currentScope !== false): ?>
+            <p class="item-meta">Čuvanje ne briše prethodnu verziju - ona ostaje u istoriji ispod.</p>
+        <?php endif; ?>
+
+        <form method="post">
+            <input type="hidden" name="action" value="add_version">
+
+            <div class="form-row">
+                <label for="version">Oznaka verzije</label>
+                <input type="text" name="version" id="version" required
+                    value="<?= $currentScope === false ? '1.0' : '' ?>"
+                    placeholder="npr. 1.0, 1.1, 2.0">
+            </div>
+
+            <div class="form-row">
+                <label for="scope_text">Tekst obima</label>
+                <textarea name="scope_text" id="scope_text" rows="6" required
+                    placeholder="npr. ISMS obuhvata sve informacione sisteme, osoblje i procese u kancelariji u Beogradu. Van obima je ogranak u Novom Sadu, jer ne obrađuje podatke klijenata. Hosting produkcionih servera je kod eksternog cloud dobavljača, uređeno ugovorom o nivou usluge."><?= $currentScope !== false ? htmlspecialchars($currentScope['scope_text']) : '' ?></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="effective_from">Na snazi od (opciono)</label>
+                <input type="date" name="effective_from" id="effective_from">
+            </div>
+
+            <div class="form-row">
+                <label for="approved_at">Datum odobrenja (opciono)</label>
+                <input type="date" name="approved_at" id="approved_at">
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromVersionModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeVersionModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">
+                        <?= $currentScope === false ? 'Sačuvaj obim' : 'Sačuvaj kao novu verziju' ?>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
+
+<script>
+function openVersionModal() {
+    document.getElementById('version-modal-overlay').classList.add('is-open');
+}
+
+function closeVersionModal() {
+    document.getElementById('version-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromVersionModal() {
+    closeVersionModal();
+    openHelpModal();
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeVersionModal();
+    }
+});
+</script>
