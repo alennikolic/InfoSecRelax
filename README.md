@@ -24,22 +24,11 @@ Poznata ograničenja, namerno ostavljena za kasnije:
 - **Nema CSRF zaštite** na formama.
 - **Nema autentifikacije ni registracije** — `organization_id` je uvek `1`
   (videti `ensureDefaultOrganization()` u `src/config/database.php`).
-- **`?page=izjava-primenljivosti`** je jedina preostala stranica koja nije
-  prošla kroz noviju modernizaciju obrasca (modal za dodavanje/uređivanje,
-  dugme Pomoć) — i dalje radi na svom starijem, posebnom obrascu (spisak +
-  uređivanje pojedinačne kontrole preko `?control=X.XX` u URL-u), koji već
-  ima uređivanje, samo drugačije urađeno od ostatka aplikacije.
-- Nekoliko ugnježdenih dodavanja (npr. prisustvo na obuci u
-  `?page=kompetentnost`, mere u nekim starijim karticama) i dalje su
-  ugrađene forme u kartici, ne modal — namerna, manja izuzeća, ne propusti.
 - Nekoliko tabela iz šeme nema svoju stavku menija (namerne odluke, ne
   propusti): `equipment`, `storage_media`, `personnel_screening`,
   `confidentiality_agreements`, `disciplinary_actions`. Takođe,
   `legal_requirements` je zamenjena širim `compliance_items` registrom
-  (A.5.31-5.36) i ostaje u šemi neiskorišćena. Isto tako, `scope_exclusions`
-  i `third_party_dependencies` ostaju u šemi neiskorišćene otkad je obim
-  ISMS-a (`?page=obim`) prešao na pristup "sve u tekstu obima", bez posebnih
-  stavki za izuzetke.
+  (A.5.31-5.36) i ostaje u šemi neiskorišćena.
 
 ## Tehnologije
 
