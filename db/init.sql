@@ -1141,7 +1141,6 @@ CROSS JOIN (
     SELECT 'pregled-menadzmenta'             UNION ALL
     SELECT 'unapredjenje'                    UNION ALL
     SELECT 'korektivne-mere'                 UNION ALL
-    SELECT 'pomoc-uredjivanje'               UNION ALL
     SELECT 'korisnici'                       UNION ALL
     SELECT 'role-pristup'
 ) AS slug_list
