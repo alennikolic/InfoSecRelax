@@ -7,10 +7,12 @@
  * kolone asset_name) i $treatments (niz redova iz risk_treatments za
  * taj rizik, spojenih LEFT JOIN-om sa personnel radi owner_name; može
  * biti prazan niz) već postavljeni pre uključivanja ovog fajla - deli
- * scope sa foreach petljom iz koje se poziva. Takođe očekuje
- * $activePersonnelOptions (niz iz personnel), postavljen jednom u
- * procena-rizika.php pre foreach petlje, za dropdown u formi za
- * dodavanje mere.
+ * scope sa foreach petljom iz koje se poziva.
+ *
+ * "Dodaj meru" ne otvara više ugrađenu formu u kartici - otvara
+ * zajednički modal na nivou stranice (modules/procena-rizika.php), sa
+ * ovim risk['id']/title prosleđenim preko JS poziva - isti obrazac kao
+ * "+ Dodaj zahtev" u party-card.php.
  *
  * Status mere tretmana ovde ima samo jednu radnju koja menja stanje
  * ("Označi kao sprovedeno") - "u_toku" i "ponovo_otvoreno" nisu još
@@ -54,10 +56,24 @@ $treatmentOptionLabels = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($risk['title']) ?></span>
-        <span class="status-badge <?= htmlspecialchars($riskLevelTone[$risk['risk_level']] ?? 'is-neutral') ?>">
-            <?= htmlspecialchars($riskLevelLabels[$risk['risk_level']] ?? 'Nije izračunato') ?>
-            (<?= (int) $risk['likelihood'] ?> × <?= (int) $risk['impact'] ?> = <?= (int) $risk['risk_score'] ?>)
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($riskLevelTone[$risk['risk_level']] ?? 'is-neutral') ?>">
+                <?= htmlspecialchars($riskLevelLabels[$risk['risk_level']] ?? 'Nije izračunato') ?>
+                (<?= (int) $risk['likelihood'] ?> × <?= (int) $risk['impact'] ?> = <?= (int) $risk['risk_score'] ?>)
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditRiskModal(<?= json_encode([
+                    "id"                        => (int) $risk["id"],
+                    "title"                     => $risk["title"],
+                    "threat_description"        => $risk["threat_description"],
+                    "vulnerability_description" => $risk["vulnerability_description"],
+                    "asset_id"                  => $risk["asset_id"] ?? "",
+                    "likelihood"                => (int) $risk["likelihood"],
+                    "impact"                    => (int) $risk["impact"],
+                    "identified_at"             => $risk["identified_at"],
+                    "review_trigger"            => $risk["review_trigger"],
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <p><strong>Pretnja:</strong> <?= nl2br(htmlspecialchars($risk['threat_description'])) ?></p>
@@ -131,46 +147,10 @@ $treatmentOptionLabels = [
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="add_treatment">
-        <input type="hidden" name="risk_id" value="<?= (int) $risk['id'] ?>">
+    <button type="button" class="btn-secondary"
+        onclick='openTreatmentModal(<?= (int) $risk['id'] ?>, <?= json_encode($risk['title'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Dodaj meru</button>
 
-        <div class="form-row">
-            <label for="treatment_option_<?= (int) $risk['id'] ?>">Način tretmana</label>
-            <select name="treatment_option" id="treatment_option_<?= (int) $risk['id'] ?>" required>
-                <option value="">Izaberite...</option>
-                <option value="smanjiti">Smanjiti</option>
-                <option value="izbeci">Izbeći</option>
-                <option value="preneti">Preneti</option>
-                <option value="prihvatiti">Prihvatiti</option>
-            </select>
-        </div>
-
-        <div class="form-row">
-            <label for="treatment_description_<?= (int) $risk['id'] ?>">Opis mere</label>
-            <textarea name="description" id="treatment_description_<?= (int) $risk['id'] ?>" rows="2" required
-                placeholder="npr. Uključiti dvofaktorsku autentifikaciju za sve administratorske naloge."></textarea>
-        </div>
-
-        <div class="form-row">
-            <label for="treatment_owner_<?= (int) $risk['id'] ?>">Nosilac mere (opciono)</label>
-            <select name="owner_id" id="treatment_owner_<?= (int) $risk['id'] ?>">
-                <option value="">Nije dodeljen</option>
-                <?php foreach ($activePersonnelOptions as $option): ?>
-                    <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-row">
-            <label for="treatment_due_<?= (int) $risk['id'] ?>">Rok (opciono)</label>
-            <input type="date" name="due_date" id="treatment_due_<?= (int) $risk['id'] ?>">
-        </div>
-
-        <button type="submit" class="btn-secondary">Dodaj meru</button>
-    </form>
-
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj rizik i sve njegove mere tretmana?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj rizik i sve njegove mere tretmana?');">
         <input type="hidden" name="action" value="delete_risk">
         <input type="hidden" name="id" value="<?= (int) $risk['id'] ?>">
         <button type="submit" class="btn-delete">Obriši rizik</button>

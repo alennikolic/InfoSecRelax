@@ -32,9 +32,20 @@ $classificationTone = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($asset['name']) ?></span>
-        <span class="factor-category">
-            <?= htmlspecialchars($assetTypeLabels[$asset['asset_type']] ?? $asset['asset_type']) ?>
-        </span>
+        <div class="button-group">
+            <span class="factor-category">
+                <?= htmlspecialchars($assetTypeLabels[$asset['asset_type']] ?? $asset['asset_type']) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditAssetModal(<?= json_encode([
+                    "id"             => (int) $asset["id"],
+                    "name"           => $asset["name"],
+                    "asset_type"     => $asset["asset_type"],
+                    "description"    => $asset["description"] ?? "",
+                    "owner_id"       => $asset["owner_id"] ?? "",
+                    "classification" => $asset["classification"],
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if (!empty($asset['description'])): ?>

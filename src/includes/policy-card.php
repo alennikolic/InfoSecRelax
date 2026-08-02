@@ -37,7 +37,22 @@ $alreadyAcknowledgedIds = array_map('intval', array_column($acknowledgments, 'pe
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($policy['title']) ?></span>
-        <span class="factor-category"><?= htmlspecialchars($policyTypeLabels[$policy['policy_type']] ?? $policy['policy_type']) ?></span>
+        <div class="button-group">
+            <span class="factor-category"><?= htmlspecialchars($policyTypeLabels[$policy['policy_type']] ?? $policy['policy_type']) ?></span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditPolicyModal(<?= json_encode([
+                    "id"                      => (int) $policy["id"],
+                    "title"                   => $policy["title"],
+                    "policy_type"             => $policy["policy_type"],
+                    "topic"                   => $policy["topic"] ?? "",
+                    "acknowledgment_required" => (bool) $policy["acknowledgment_required"],
+                    "classification"          => $policy["classification"],
+                    "owner_id"                => $policy["owner_id"] ?? "",
+                    "approved_by"             => $policy["approved_by"] ?? "",
+                    "approved_at"             => $policy["approved_at"] ?? "",
+                    "next_review_due"         => $policy["next_review_due"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if (!empty($policy['topic'])): ?>
@@ -97,33 +112,8 @@ $alreadyAcknowledgedIds = array_map('intval', array_column($acknowledgments, 'pe
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="add_version">
-        <input type="hidden" name="policy_id" value="<?= (int) $policy['id'] ?>">
-
-        <div class="form-row">
-            <label for="version_number_<?= (int) $policy['id'] ?>">Nova verzija</label>
-            <input type="text" name="version_number" id="version_number_<?= (int) $policy['id'] ?>" required
-                placeholder="npr. 1.1">
-        </div>
-
-        <div class="form-row">
-            <label for="change_summary_<?= (int) $policy['id'] ?>">Šta je izmenjeno (opciono)</label>
-            <textarea name="change_summary" id="change_summary_<?= (int) $policy['id'] ?>" rows="2"></textarea>
-        </div>
-
-        <div class="form-row">
-            <label for="changed_by_<?= (int) $policy['id'] ?>">Izmenio (opciono)</label>
-            <select name="changed_by" id="changed_by_<?= (int) $policy['id'] ?>">
-                <option value="">Nije dodeljen</option>
-                <?php foreach ($activePersonnelOptions as $option): ?>
-                    <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <button type="submit" class="btn-secondary">Sačuvaj novu verziju</button>
-    </form>
+    <button type="button" class="btn-secondary"
+        onclick='openPolicyVersionModal(<?= (int) $policy['id'] ?>, <?= json_encode($policy['title'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Nova verzija</button>
 
     <p class="item-title">Potvrde zaposlenih (<?= $acknowledgedCount ?> od <?= $activeCount ?> aktivnih)</p>
     <?php if (empty($acknowledgments)): ?>

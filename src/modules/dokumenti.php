@@ -5,18 +5,25 @@
  * Klauzula 7.5: Dokumentovane informacije.
  *
  * Koristi deljene helper funkcije iz includes/document-helpers.php
- * (createDocument, recordDocumentVersion) umesto da sam piše insert i
- * verzionisanje - iste funkcije će kasnije koristiti i politike.php,
- * koji dodaje samo tanak red u tabeli policies povrh istog dokumenta.
+ * (createDocument, recordDocumentVersion) - iste funkcije koristi i
+ * politike.php, koji dodaje samo tanak red u tabeli policies povrh
+ * istog dokumenta. Isti obrazac kao politike.php: toolbar sa Pomoć
+ * desno, modal za dodavanje/uređivanje dokumenta ("Uredi" NE menja
+ * oznaku verzije - ta ide isključivo kroz "Nova verzija", da se ne
+ * pokvari veza sa istorijom), i "Nova verzija" kao poseban modal
+ * otvoren dugmetom u kartici umesto ugrađene forme.
  */
 
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
 require __DIR__ . '/../includes/document-helpers.php';
+require __DIR__ . '/../includes/help-content.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
+
+$pageSlug = 'dokumenti';
 
 $errors = [];
 
@@ -83,6 +90,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_d
             'approved_by'     => $approvedByValue,
             'approved_at'     => $approvedAt !== '' ? $approvedAt : null,
             'next_review_due' => $nextReviewDue !== '' ? $nextReviewDue : null,
+        ]);
+
+        header('Location: ?page=dokumenti');
+        exit;
+    }
+}
+
+// --- Ažuriranje postojećeg dokumenta (NE menja oznaku verzije) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_document') {
+    $id             = (int) ($_POST['id'] ?? 0);
+    $title          = trim($_POST['title'] ?? '');
+    $docType        = $_POST['doc_type'] ?? '';
+    $classification = $_POST['classification'] ?? 'interno';
+    $fileReference  = trim($_POST['file_reference'] ?? '');
+    $ownerId        = trim($_POST['owner_id'] ?? '');
+    $approvedBy     = trim($_POST['approved_by'] ?? '');
+    $approvedAt     = trim($_POST['approved_at'] ?? '');
+    $nextReviewDue  = trim($_POST['next_review_due'] ?? '');
+
+    if ($title === '') {
+        $errors[] = 'Naziv dokumenta je obavezan.';
+    }
+    if (!in_array($docType, $validDocTypes, true)) {
+        $errors[] = 'Izaberite vrstu dokumenta.';
+    }
+    if (!in_array($classification, $validClassifications, true)) {
+        $errors[] = 'Izaberite klasifikaciju.';
+    }
+
+    $ownerIdValue = null;
+    if ($ownerId !== '') {
+        $ownerIdValue = (int) $ownerId;
+        $personCheck = $pdo->prepare('SELECT id FROM personnel WHERE id = :id AND organization_id = :org_id');
+        $personCheck->execute(['id' => $ownerIdValue, 'org_id' => $organizationId]);
+
+        if ($personCheck->fetchColumn() === false) {
+            $errors[] = 'Izabrani vlasnik nije pronađen.';
+            $ownerIdValue = null;
+        }
+    }
+
+    $approvedByValue = null;
+    if ($approvedBy !== '') {
+        $approvedByValue = (int) $approvedBy;
+        $personCheck = $pdo->prepare('SELECT id FROM personnel WHERE id = :id AND organization_id = :org_id');
+        $personCheck->execute(['id' => $approvedByValue, 'org_id' => $organizationId]);
+
+        if ($personCheck->fetchColumn() === false) {
+            $errors[] = 'Izabrani odobravalac nije pronađen.';
+            $approvedByValue = null;
+        }
+    }
+
+    if (empty($errors)) {
+        $pdo->prepare(
+            'UPDATE documents
+             SET title = :title, doc_type = :doc_type, classification = :classification,
+                 file_reference = :file_reference, owner_id = :owner_id, approved_by = :approved_by,
+                 approved_at = :approved_at, next_review_due = :next_review_due
+             WHERE id = :id AND organization_id = :org_id'
+        )->execute([
+            'title'           => $title,
+            'doc_type'        => $docType,
+            'classification'  => $classification,
+            'file_reference'  => $fileReference !== '' ? $fileReference : null,
+            'owner_id'        => $ownerIdValue,
+            'approved_by'     => $approvedByValue,
+            'approved_at'     => $approvedAt !== '' ? $approvedAt : null,
+            'next_review_due' => $nextReviewDue !== '' ? $nextReviewDue : null,
+            'id'              => $id,
+            'org_id'          => $organizationId,
         ]);
 
         header('Location: ?page=dokumenti');
@@ -177,13 +255,10 @@ $versionsByDocument = [];
 foreach ($versionsStmt->fetchAll() as $version) {
     $versionsByDocument[$version['document_id']][] = $version;
 }
-?>
 
-<p class="module-intro">
-    Klauzula 7.5 traži kontrolu dokumentovanih informacija - jasno ko je
-    vlasnik, ko odobrava, kada se dokument ponovo pregleda, i istoriju
-    izmena kroz verzije.
-</p>
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
+?>
 
 <?php if (!empty($errors)): ?>
 <div class="alert alert-error">
@@ -193,81 +268,10 @@ foreach ($versionsStmt->fetchAll() as $version) {
 </div>
 <?php endif; ?>
 
-<form method="post" class="factor-form">
-    <input type="hidden" name="action" value="add_document">
-
-    <div class="form-row">
-        <label for="title">Naziv dokumenta</label>
-        <input type="text" name="title" id="title" required placeholder="npr. Procedura za rezervne kopije">
-    </div>
-
-    <div class="form-row">
-        <label for="doc_type">Vrsta dokumenta</label>
-        <select name="doc_type" id="doc_type" required>
-            <option value="">Izaberite...</option>
-            <option value="politika">Politika</option>
-            <option value="procedura">Procedura</option>
-            <option value="registar">Registar</option>
-            <option value="zapisnik">Zapisnik</option>
-            <option value="ostalo">Ostalo</option>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="classification">Klasifikacija</label>
-        <select name="classification" id="classification">
-            <option value="javno">Javno</option>
-            <option value="interno" selected>Interno</option>
-            <option value="poverljivo">Poverljivo</option>
-            <option value="strogo_poverljivo">Strogo poverljivo</option>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="current_version">Oznaka verzije</label>
-        <input type="text" name="current_version" id="current_version" value="1.0" required>
-    </div>
-
-    <div class="form-row">
-        <label for="file_reference">Putanja ili URL do fajla (opciono)</label>
-        <input type="text" name="file_reference" id="file_reference" placeholder="npr. /dokumenti/procedura-backup.pdf">
-    </div>
-
-    <div class="form-row">
-        <label for="owner_id">Vlasnik dokumenta (opciono)</label>
-        <select name="owner_id" id="owner_id">
-            <option value="">Nije dodeljen</option>
-            <?php foreach ($activePersonnelOptions as $option): ?>
-                <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <?php if (empty($activePersonnelOptions)): ?>
-            <p class="item-meta">Nema unetih aktivnih osoba - prvo ih dodaj na stranici "Zaposleni i saradnici".</p>
-        <?php endif; ?>
-    </div>
-
-    <div class="form-row">
-        <label for="approved_by">Odobrio (opciono)</label>
-        <select name="approved_by" id="approved_by">
-            <option value="">Nije dodeljen</option>
-            <?php foreach ($activePersonnelOptions as $option): ?>
-                <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="approved_at">Datum odobrenja (opciono)</label>
-        <input type="date" name="approved_at" id="approved_at">
-    </div>
-
-    <div class="form-row">
-        <label for="next_review_due">Sledeći pregled dospeva (opciono)</label>
-        <input type="date" name="next_review_due" id="next_review_due">
-    </div>
-
-    <button type="submit" class="btn-primary">Dodaj dokument</button>
-</form>
+<div class="toolbar">
+    <button type="button" class="btn-primary" onclick="openAddDocumentModal()">+ Dodaj dokument</button>
+    <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+</div>
 
 <?php if (empty($allDocuments)): ?>
     <p class="empty-state">Još uvek nema unetih dokumenata.</p>
@@ -277,3 +281,218 @@ foreach ($versionsStmt->fetchAll() as $version) {
         <?php include __DIR__ . '/../includes/document-card.php'; ?>
     <?php endforeach; ?>
 <?php endif; ?>
+
+<div class="modal-overlay" id="document-modal-overlay" onclick="closeDocumentModal()">
+    <div class="modal-box modal-box-wide" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="document-modal-title">Dodaj dokument</span>
+            <button type="button" class="modal-close" onclick="closeDocumentModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post" id="document-modal-form">
+            <input type="hidden" name="action" id="document-modal-action" value="add_document">
+            <input type="hidden" name="id" id="document-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_title">Naziv dokumenta</label>
+                <input type="text" name="title" id="modal_title" required placeholder="npr. Procedura za rezervne kopije">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_doc_type">Vrsta dokumenta</label>
+                <select name="doc_type" id="modal_doc_type" required>
+                    <option value="">Izaberite...</option>
+                    <option value="politika">Politika</option>
+                    <option value="procedura">Procedura</option>
+                    <option value="registar">Registar</option>
+                    <option value="zapisnik">Zapisnik</option>
+                    <option value="ostalo">Ostalo</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_classification">Klasifikacija</label>
+                <select name="classification" id="modal_classification">
+                    <option value="javno">Javno</option>
+                    <option value="interno">Interno</option>
+                    <option value="poverljivo">Poverljivo</option>
+                    <option value="strogo_poverljivo">Strogo poverljivo</option>
+                </select>
+            </div>
+
+            <div class="form-row" id="modal-current-version-row">
+                <label for="modal_current_version">Oznaka verzije</label>
+                <input type="text" name="current_version" id="modal_current_version" value="1.0" required>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_file_reference">Putanja ili URL do fajla (opciono)</label>
+                <input type="text" name="file_reference" id="modal_file_reference" placeholder="npr. /dokumenti/procedura-backup.pdf">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_owner_id">Vlasnik dokumenta (opciono)</label>
+                <select name="owner_id" id="modal_owner_id">
+                    <option value="">Nije dodeljen</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (empty($activePersonnelOptions)): ?>
+                    <p class="item-meta">Nema unetih aktivnih osoba - prvo ih dodaj na stranici "Zaposleni i saradnici".</p>
+                <?php endif; ?>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_approved_by">Odobrio (opciono)</label>
+                <select name="approved_by" id="modal_approved_by">
+                    <option value="">Nije dodeljen</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_approved_at">Datum odobrenja (opciono)</label>
+                <input type="date" name="approved_at" id="modal_approved_at">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_next_review_due">Sledeći pregled dospeva (opciono)</label>
+                <input type="date" name="next_review_due" id="modal_next_review_due">
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromDocumentModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeDocumentModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
+
+<div class="modal-overlay" id="document-version-modal-overlay" onclick="closeDocumentVersionModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="document-version-modal-title">Nova verzija</span>
+            <button type="button" class="modal-close" onclick="closeDocumentVersionModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post">
+            <input type="hidden" name="action" value="add_version">
+            <input type="hidden" name="document_id" id="document-version-modal-document-id" value="">
+
+            <div class="form-row">
+                <label for="modal_version_number">Nova verzija</label>
+                <input type="text" name="version_number" id="modal_version_number" required
+                    placeholder="npr. 1.1">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_change_summary">Šta je izmenjeno (opciono)</label>
+                <textarea name="change_summary" id="modal_change_summary" rows="2"
+                    placeholder="npr. Dodat postupak za testiranje obnavljanja rezervnih kopija."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_version_file_reference">Putanja ili URL do fajla (opciono)</label>
+                <input type="text" name="file_reference" id="modal_version_file_reference">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_changed_by">Izmenio (opciono)</label>
+                <select name="changed_by" id="modal_changed_by">
+                    <option value="">Nije dodeljen</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromDocumentVersionModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeDocumentVersionModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAddDocumentModal() {
+    document.getElementById('document-modal-title').textContent = 'Dodaj dokument';
+    document.getElementById('document-modal-action').value = 'add_document';
+    document.getElementById('document-modal-id').value = '';
+    document.getElementById('modal_title').value = '';
+    document.getElementById('modal_doc_type').value = '';
+    document.getElementById('modal_classification').value = 'interno';
+    document.getElementById('modal_file_reference').value = '';
+    document.getElementById('modal_owner_id').value = '';
+    document.getElementById('modal_approved_by').value = '';
+    document.getElementById('modal_approved_at').value = '';
+    document.getElementById('modal_next_review_due').value = '';
+    document.getElementById('modal-current-version-row').classList.remove('is-hidden');
+    document.getElementById('modal_current_version').required = true;
+    document.getElementById('modal_current_version').value = '1.0';
+    document.getElementById('document-modal-overlay').classList.add('is-open');
+}
+
+function openEditDocumentModal(document_) {
+    document.getElementById('document-modal-title').textContent = 'Uredi dokument';
+    document.getElementById('document-modal-action').value = 'update_document';
+    document.getElementById('document-modal-id').value = document_.id;
+    document.getElementById('modal_title').value = document_.title;
+    document.getElementById('modal_doc_type').value = document_.doc_type;
+    document.getElementById('modal_classification').value = document_.classification;
+    document.getElementById('modal_file_reference').value = document_.file_reference;
+    document.getElementById('modal_owner_id').value = document_.owner_id;
+    document.getElementById('modal_approved_by').value = document_.approved_by;
+    document.getElementById('modal_approved_at').value = document_.approved_at;
+    document.getElementById('modal_next_review_due').value = document_.next_review_due;
+    document.getElementById('modal-current-version-row').classList.add('is-hidden');
+    document.getElementById('modal_current_version').required = false;
+    document.getElementById('document-modal-overlay').classList.add('is-open');
+}
+
+function closeDocumentModal() {
+    document.getElementById('document-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromDocumentModal() {
+    closeDocumentModal();
+    openHelpModal();
+}
+
+function openDocumentVersionModal(documentId, documentTitle) {
+    document.getElementById('document-version-modal-title').textContent = 'Nova verzija — ' + documentTitle;
+    document.getElementById('document-version-modal-document-id').value = documentId;
+    document.getElementById('modal_version_number').value = '';
+    document.getElementById('modal_change_summary').value = '';
+    document.getElementById('modal_version_file_reference').value = '';
+    document.getElementById('modal_changed_by').value = '';
+    document.getElementById('document-version-modal-overlay').classList.add('is-open');
+}
+
+function closeDocumentVersionModal() {
+    document.getElementById('document-version-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromDocumentVersionModal() {
+    closeDocumentVersionModal();
+    openHelpModal();
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeDocumentModal();
+        closeDocumentVersionModal();
+    }
+});
+</script>

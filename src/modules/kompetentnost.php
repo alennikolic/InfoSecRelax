@@ -4,9 +4,13 @@
  *
  * Klauzula 7.2 (kompetentnost) i 7.3 / A.6.3 (svest i obuka) - jedna
  * stavka menija pokriva oba, pa su kombinovana ovde kao dve odvojene
- * sekcije na istoj stranici: zapisi o kompetentnosti (flat CRUD) i
- * obuke sa prisustvom (roditelj-dete, isti obrazac kao rizik i mere
- * tretmana u procena-rizika.php).
+ * sekcije na istoj stranici: zapisi o kompetentnosti (flat CRUD, modal
+ * za dodavanje/uređivanje) i obuke sa prisustvom (roditelj-dete, isti
+ * obrazac kao rizik i mere tretmana u procena-rizika.php). Pomoć je
+ * jedna za celu stranicu, dugme živi uz prvi toolbar.
+ *
+ * Prisustvo na obuci ostaje dodaj/obriši u kartici, kao ranije zahtevi
+ * i mere tretmana - van obima ovog prolaza.
  *
  * Van obima ove verzije: personnel_screening (A.6.1) - drugačija
  * kontrola Aneksa A, nema svoju stavku menija još.
@@ -15,9 +19,12 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../includes/help-content.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
+
+$pageSlug = 'kompetentnost';
 
 $errors = [];
 
@@ -93,6 +100,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_c
     }
 }
 
+// --- Ažuriranje postojećeg zapisa o kompetentnosti ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_competence') {
+    $id                 = (int) ($_POST['id'] ?? 0);
+    $personnelId        = trim($_POST['personnel_id'] ?? '');
+    $roleId             = trim($_POST['role_id'] ?? '');
+    $requiredCompetence = trim($_POST['required_competence'] ?? '');
+    $gapIdentified      = trim($_POST['gap_identified'] ?? '');
+    $actionTaken        = trim($_POST['action_taken'] ?? '');
+    $evaluatedEffective = $_POST['evaluated_effective'] ?? '';
+    $evaluatedAt        = trim($_POST['evaluated_at'] ?? '');
+
+    $personnelIdValue = null;
+    if ($personnelId !== '') {
+        $personnelIdValue = (int) $personnelId;
+        $personCheck = $pdo->prepare('SELECT id FROM personnel WHERE id = :id AND organization_id = :org_id');
+        $personCheck->execute(['id' => $personnelIdValue, 'org_id' => $organizationId]);
+
+        if ($personCheck->fetchColumn() === false) {
+            $errors[] = 'Izabrana osoba nije pronađena.';
+            $personnelIdValue = null;
+        }
+    } else {
+        $errors[] = 'Osoba je obavezna.';
+    }
+
+    if ($requiredCompetence === '') {
+        $errors[] = 'Opis potrebne kompetencije je obavezan.';
+    }
+
+    $roleIdValue = null;
+    if ($roleId !== '') {
+        $roleIdValue = (int) $roleId;
+        $roleCheck = $pdo->prepare('SELECT id FROM roles_responsibilities WHERE id = :id AND organization_id = :org_id');
+        $roleCheck->execute(['id' => $roleIdValue, 'org_id' => $organizationId]);
+
+        if ($roleCheck->fetchColumn() === false) {
+            $errors[] = 'Izabrana uloga nije pronađena.';
+            $roleIdValue = null;
+        }
+    }
+
+    $evaluatedEffectiveValue = null;
+    if ($evaluatedEffective === '1') {
+        $evaluatedEffectiveValue = 1;
+    } elseif ($evaluatedEffective === '0') {
+        $evaluatedEffectiveValue = 0;
+    }
+
+    if (empty($errors)) {
+        $stmt = $pdo->prepare(
+            'UPDATE competence_records
+             SET personnel_id = :personnel_id, role_id = :role_id, required_competence = :required_competence,
+                 gap_identified = :gap_identified, action_taken = :action_taken,
+                 evaluated_effective = :evaluated_effective, evaluated_at = :evaluated_at
+             WHERE id = :id AND organization_id = :org_id'
+        );
+        $stmt->execute([
+            'personnel_id'        => $personnelIdValue,
+            'role_id'             => $roleIdValue,
+            'required_competence' => $requiredCompetence,
+            'gap_identified'      => $gapIdentified !== '' ? $gapIdentified : null,
+            'action_taken'        => $actionTaken !== '' ? $actionTaken : null,
+            'evaluated_effective' => $evaluatedEffectiveValue,
+            'evaluated_at'        => $evaluatedAt !== '' ? $evaluatedAt : null,
+            'id'                  => $id,
+            'org_id'              => $organizationId,
+        ]);
+
+        header('Location: ?page=kompetentnost');
+        exit;
+    }
+}
+
 // --- Brisanje zapisa o kompetentnosti ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_competence') {
     $id = (int) ($_POST['id'] ?? 0);
@@ -129,6 +209,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_t
             'description'  => $description !== '' ? $description : null,
             'held_at'      => $heldAt,
             'is_mandatory' => $isMandatory,
+        ]);
+
+        header('Location: ?page=kompetentnost');
+        exit;
+    }
+}
+
+// --- Ažuriranje postojeće obuke ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_training') {
+    $id          = (int) ($_POST['id'] ?? 0);
+    $title       = trim($_POST['title'] ?? '');
+    $description = trim($_POST['description'] ?? '');
+    $heldAt      = trim($_POST['held_at'] ?? '');
+    $isMandatory = isset($_POST['is_mandatory']) ? 1 : 0;
+
+    if ($title === '') {
+        $errors[] = 'Naziv obuke je obavezan.';
+    }
+    if ($heldAt === '') {
+        $errors[] = 'Datum održavanja je obavezan.';
+    }
+
+    if (empty($errors)) {
+        $stmt = $pdo->prepare(
+            'UPDATE training_sessions
+             SET title = :title, description = :description, held_at = :held_at, is_mandatory = :is_mandatory
+             WHERE id = :id AND organization_id = :org_id'
+        );
+        $stmt->execute([
+            'title'        => $title,
+            'description'  => $description !== '' ? $description : null,
+            'held_at'      => $heldAt,
+            'is_mandatory' => $isMandatory,
+            'id'           => $id,
+            'org_id'       => $organizationId,
         ]);
 
         header('Location: ?page=kompetentnost');
@@ -253,13 +368,10 @@ $attendanceBySession = [];
 foreach ($attendanceStmt->fetchAll() as $attendance) {
     $attendanceBySession[$attendance['training_session_id']][] = $attendance;
 }
-?>
 
-<p class="module-intro">
-    Klauzula 7.2 traži da se obezbedi kompetentnost ljudi čiji rad utiče na
-    bezbednost informacija, a 7.3 svest i obuku - obe su ovde na istoj strani,
-    pošto su usko povezane.
-</p>
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
+?>
 
 <?php if (!empty($errors)): ?>
 <div class="alert alert-error">
@@ -271,66 +383,10 @@ foreach ($attendanceStmt->fetchAll() as $attendance) {
 
 <h3 class="section-heading">Kompetentnost (Klauzula 7.2)</h3>
 
-<form method="post" class="factor-form">
-    <input type="hidden" name="action" value="add_competence">
-
-    <div class="form-row">
-        <label for="personnel_id">Osoba</label>
-        <select name="personnel_id" id="personnel_id" required>
-            <option value="">Izaberite...</option>
-            <?php foreach ($activePersonnelOptions as $option): ?>
-                <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <?php if (empty($activePersonnelOptions)): ?>
-            <p class="item-meta">Nema unetih aktivnih osoba - prvo ih dodaj na stranici "Zaposleni i saradnici".</p>
-        <?php endif; ?>
-    </div>
-
-    <div class="form-row">
-        <label for="role_id">Povezana uloga (opciono)</label>
-        <select name="role_id" id="role_id">
-            <option value="">Nije povezano</option>
-            <?php foreach ($roleOptions as $option): ?>
-                <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['role_name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="required_competence">Potrebna kompetencija</label>
-        <textarea name="required_competence" id="required_competence" rows="2" required
-            placeholder="npr. Poznavanje osnova bezbednog rukovanja ličnim podacima klijenata."></textarea>
-    </div>
-
-    <div class="form-row">
-        <label for="gap_identified">Uočen nedostatak (opciono)</label>
-        <textarea name="gap_identified" id="gap_identified" rows="2"
-            placeholder="npr. Nema formalnu obuku iz zaštite podataka."></textarea>
-    </div>
-
-    <div class="form-row">
-        <label for="action_taken">Preduzeta radnja (opciono)</label>
-        <textarea name="action_taken" id="action_taken" rows="2"
-            placeholder="npr. Prisustvovao/la internoj obuci o zaštiti podataka."></textarea>
-    </div>
-
-    <div class="form-row">
-        <label for="evaluated_effective">Ocena efikasnosti (opciono)</label>
-        <select name="evaluated_effective" id="evaluated_effective">
-            <option value="">Nije ocenjeno</option>
-            <option value="1">Da, efikasno</option>
-            <option value="0">Ne, nije efikasno</option>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="evaluated_at">Datum ocene (opciono)</label>
-        <input type="date" name="evaluated_at" id="evaluated_at">
-    </div>
-
-    <button type="submit" class="btn-primary">Dodaj zapis</button>
-</form>
+<div class="toolbar">
+    <button type="button" class="btn-primary" onclick="openAddCompetenceModal()">+ Dodaj zapis</button>
+    <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+</div>
 
 <?php if (empty($allCompetenceRecords)): ?>
     <p class="empty-state">Još uvek nema unetih zapisa o kompetentnosti.</p>
@@ -342,34 +398,9 @@ foreach ($attendanceStmt->fetchAll() as $attendance) {
 
 <h3 class="section-heading">Obuke (Klauzula 7.3 / A.6.3)</h3>
 
-<form method="post" class="factor-form">
-    <input type="hidden" name="action" value="add_training">
-
-    <div class="form-row">
-        <label for="title">Naziv obuke</label>
-        <input type="text" name="title" id="title" required placeholder="npr. Prepoznavanje phishing napada">
-    </div>
-
-    <div class="form-row">
-        <label for="description">Opis (opciono)</label>
-        <textarea name="description" id="description" rows="2"
-            placeholder="npr. Radionica sa primerima stvarnih phishing mejlova primljenih u firmi."></textarea>
-    </div>
-
-    <div class="form-row">
-        <label for="held_at">Datum održavanja</label>
-        <input type="date" name="held_at" id="held_at" required value="<?= date('Y-m-d') ?>">
-    </div>
-
-    <div class="form-row form-row-inline">
-        <label class="checkbox-label">
-            <input type="checkbox" name="is_mandatory" value="1" checked>
-            Obavezna obuka
-        </label>
-    </div>
-
-    <button type="submit" class="btn-primary">Dodaj obuku</button>
-</form>
+<div class="toolbar">
+    <button type="button" class="btn-primary" onclick="openAddTrainingModal()">+ Dodaj obuku</button>
+</div>
 
 <?php if (empty($allTrainingSessions)): ?>
     <p class="empty-state">Još uvek nema unetih obuka.</p>
@@ -379,3 +410,204 @@ foreach ($attendanceStmt->fetchAll() as $attendance) {
         <?php include __DIR__ . '/../includes/training-card.php'; ?>
     <?php endforeach; ?>
 <?php endif; ?>
+
+<div class="modal-overlay" id="competence-modal-overlay" onclick="closeCompetenceModal()">
+    <div class="modal-box modal-box-wide" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="competence-modal-title">Dodaj zapis</span>
+            <button type="button" class="modal-close" onclick="closeCompetenceModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post" id="competence-modal-form">
+            <input type="hidden" name="action" id="competence-modal-action" value="add_competence">
+            <input type="hidden" name="id" id="competence-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_personnel_id">Osoba</label>
+                <select name="personnel_id" id="modal_personnel_id" required>
+                    <option value="">Izaberite...</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (empty($activePersonnelOptions)): ?>
+                    <p class="item-meta">Nema unetih aktivnih osoba - prvo ih dodaj na stranici "Zaposleni i saradnici".</p>
+                <?php endif; ?>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_role_id">Povezana uloga (opciono)</label>
+                <select name="role_id" id="modal_role_id">
+                    <option value="">Nije povezano</option>
+                    <?php foreach ($roleOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['role_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_required_competence">Potrebna kompetencija</label>
+                <textarea name="required_competence" id="modal_required_competence" rows="2" required
+                    placeholder="npr. Poznavanje osnova bezbednog rukovanja ličnim podacima klijenata."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_gap_identified">Uočen nedostatak (opciono)</label>
+                <textarea name="gap_identified" id="modal_gap_identified" rows="2"
+                    placeholder="npr. Nema formalnu obuku iz zaštite podataka."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_action_taken">Preduzeta radnja (opciono)</label>
+                <textarea name="action_taken" id="modal_action_taken" rows="2"
+                    placeholder="npr. Prisustvovao/la internoj obuci o zaštiti podataka."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_evaluated_effective">Ocena efikasnosti (opciono)</label>
+                <select name="evaluated_effective" id="modal_evaluated_effective">
+                    <option value="">Nije ocenjeno</option>
+                    <option value="1">Da, efikasno</option>
+                    <option value="0">Ne, nije efikasno</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_evaluated_at">Datum ocene (opciono)</label>
+                <input type="date" name="evaluated_at" id="modal_evaluated_at">
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromCompetenceModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeCompetenceModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="training-modal-overlay" onclick="closeTrainingModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="training-modal-title">Dodaj obuku</span>
+            <button type="button" class="modal-close" onclick="closeTrainingModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post" id="training-modal-form">
+            <input type="hidden" name="action" id="training-modal-action" value="add_training">
+            <input type="hidden" name="id" id="training-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_training_title">Naziv obuke</label>
+                <input type="text" name="title" id="modal_training_title" required placeholder="npr. Prepoznavanje phishing napada">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_training_description">Opis (opciono)</label>
+                <textarea name="description" id="modal_training_description" rows="2"
+                    placeholder="npr. Radionica sa primerima stvarnih phishing mejlova primljenih u firmi."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_held_at">Datum održavanja</label>
+                <input type="date" name="held_at" id="modal_held_at" required>
+            </div>
+
+            <div class="form-row form-row-inline">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="is_mandatory" id="modal_is_mandatory" value="1" checked>
+                    Obavezna obuka
+                </label>
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromTrainingModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeTrainingModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
+
+<script>
+function openAddCompetenceModal() {
+    document.getElementById('competence-modal-title').textContent = 'Dodaj zapis';
+    document.getElementById('competence-modal-action').value = 'add_competence';
+    document.getElementById('competence-modal-id').value = '';
+    document.getElementById('modal_personnel_id').value = '';
+    document.getElementById('modal_role_id').value = '';
+    document.getElementById('modal_required_competence').value = '';
+    document.getElementById('modal_gap_identified').value = '';
+    document.getElementById('modal_action_taken').value = '';
+    document.getElementById('modal_evaluated_effective').value = '';
+    document.getElementById('modal_evaluated_at').value = '';
+    document.getElementById('competence-modal-overlay').classList.add('is-open');
+}
+
+function openEditCompetenceModal(record) {
+    document.getElementById('competence-modal-title').textContent = 'Uredi zapis';
+    document.getElementById('competence-modal-action').value = 'update_competence';
+    document.getElementById('competence-modal-id').value = record.id;
+    document.getElementById('modal_personnel_id').value = record.personnel_id;
+    document.getElementById('modal_role_id').value = record.role_id;
+    document.getElementById('modal_required_competence').value = record.required_competence;
+    document.getElementById('modal_gap_identified').value = record.gap_identified;
+    document.getElementById('modal_action_taken').value = record.action_taken;
+    document.getElementById('modal_evaluated_effective').value = record.evaluated_effective;
+    document.getElementById('modal_evaluated_at').value = record.evaluated_at;
+    document.getElementById('competence-modal-overlay').classList.add('is-open');
+}
+
+function closeCompetenceModal() {
+    document.getElementById('competence-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromCompetenceModal() {
+    closeCompetenceModal();
+    openHelpModal();
+}
+
+function openAddTrainingModal() {
+    document.getElementById('training-modal-title').textContent = 'Dodaj obuku';
+    document.getElementById('training-modal-action').value = 'add_training';
+    document.getElementById('training-modal-id').value = '';
+    document.getElementById('modal_training_title').value = '';
+    document.getElementById('modal_training_description').value = '';
+    document.getElementById('modal_held_at').value = '<?= date('Y-m-d') ?>';
+    document.getElementById('modal_is_mandatory').checked = true;
+    document.getElementById('training-modal-overlay').classList.add('is-open');
+}
+
+function openEditTrainingModal(session) {
+    document.getElementById('training-modal-title').textContent = 'Uredi obuku';
+    document.getElementById('training-modal-action').value = 'update_training';
+    document.getElementById('training-modal-id').value = session.id;
+    document.getElementById('modal_training_title').value = session.title;
+    document.getElementById('modal_training_description').value = session.description;
+    document.getElementById('modal_held_at').value = session.held_at;
+    document.getElementById('modal_is_mandatory').checked = session.is_mandatory;
+    document.getElementById('training-modal-overlay').classList.add('is-open');
+}
+
+function closeTrainingModal() {
+    document.getElementById('training-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromTrainingModal() {
+    closeTrainingModal();
+    openHelpModal();
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeCompetenceModal();
+        closeTrainingModal();
+    }
+});
+</script>

@@ -11,9 +11,20 @@
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($location['name']) ?></span>
-        <span class="status-badge <?= $location['has_monitoring'] ? 'is-positive' : 'is-neutral' ?>">
-            <?= $location['has_monitoring'] ? 'Video nadzor: Da' : 'Video nadzor: Ne' ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= $location['has_monitoring'] ? 'is-positive' : 'is-neutral' ?>">
+                <?= $location['has_monitoring'] ? 'Video nadzor: Da' : 'Video nadzor: Ne' ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditLocationModal(<?= json_encode([
+                    "id"                     => (int) $location["id"],
+                    "name"                   => $location["name"],
+                    "address"                => $location["address"] ?? "",
+                    "perimeter_description"  => $location["perimeter_description"] ?? "",
+                    "entry_control_method"   => $location["entry_control_method"] ?? "",
+                    "has_monitoring"         => (bool) $location["has_monitoring"],
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if (!empty($location['address'])): ?>

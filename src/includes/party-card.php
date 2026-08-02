@@ -8,8 +8,10 @@
  * prazan niz) već postavljeni pre uključivanja ovog fajla - deli scope
  * sa foreach petljom iz koje se poziva, isto kao includes/factor-card.php.
  *
- * "Uredi" menja samo naziv i vrstu strane (kroz zainteresovane-strane.php
- * modal) - zahtevi ostaju dodaj/obriši, nemaju svoje uređivanje još.
+ * "Uredi" menja naziv i vrstu strane. "+ Dodaj zahtev" ne otvara više
+ * ugrađenu formu u kartici - otvara zajednički modal na nivou stranice
+ * (modules/zainteresovane-strane.php), sa ovim party['id']/name
+ * prosleđenim preko JS poziva.
  */
 ?>
 <div class="factor-card">
@@ -57,28 +59,6 @@
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="add_requirement">
-        <input type="hidden" name="interested_party_id" value="<?= (int) $party['id'] ?>">
-
-        <div class="form-row">
-            <label for="requirement_<?= (int) $party['id'] ?>">Novi zahtev</label>
-            <textarea name="requirement" id="requirement_<?= (int) $party['id'] ?>" rows="2" required
-                placeholder="npr. Klijenti očekuju da njihovi lični podaci budu zaštićeni od neovlašćenog pristupa."></textarea>
-        </div>
-
-        <div class="form-row form-row-inline">
-            <label class="checkbox-label">
-                <input type="checkbox" name="addressed_by_isms" value="1" checked>
-                Pokriveno kroz ISMS
-            </label>
-        </div>
-
-        <div class="form-row">
-            <label for="notes_<?= (int) $party['id'] ?>">Napomena (opciono)</label>
-            <input type="text" name="notes" id="notes_<?= (int) $party['id'] ?>">
-        </div>
-
-        <button type="submit" class="btn-secondary">Dodaj zahtev</button>
-    </form>
+    <button type="button" class="btn-secondary"
+        onclick='openAddRequirementModal(<?= (int) $party['id'] ?>, <?= json_encode($party['name'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>+ Dodaj zahtev</button>
 </div>

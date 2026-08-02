@@ -1043,14 +1043,20 @@ INSERT IGNORE INTO help_content (page_slug, title, body) VALUES
 <p>Brojke na vrhu (aktivni zaposleni, rizici, otvoreni incidenti, popunjenost Izjave o primenljivosti) su brz signal stanja - ne moraju biti "savršene", ali vredi ih pratiti kroz vreme.</p>
 <h4>Tabele po grupi</h4>
 <p>Klik na naziv bilo kog modula vodi direktno na tu stranicu. Broj u koloni "Broj unosa" pokazuje koliko je stavki uneto - prazna kolona znači da taj deo ISMS-a još čeka popunjavanje.</p>'),
-('obim', 'Pomoć — Obim ISMS-a',
-'<p>Klauzula 4.3 traži da se, na osnovu konteksta (4.1) i zahteva zainteresovanih strana (4.2), odredi tačan obim ISMS-a - koji delovi organizacije su unutar njega, a koji su izričito isključeni i zašto.</p>
-<h4>Šta ide u tekst obima</h4>
-<p>Kratak, jasan opis: koje lokacije, sistemi i procesi su pokriveni. Ne mora biti dugačak - bolji je precizan i tačan nego opširan.</p>
+(
+    'obim',
+    'Pomoć — Obim ISMS-a',
+    '<p>Klauzula 4.3 traži da se, na osnovu konteksta (4.1) i zahteva zainteresovanih strana (4.2), odredi tačan obim ISMS-a - koji delovi organizacije, lokacije i sistemi su unutar njega, a koji su izričito isključeni i zašto.</p>
+ 
+<h4>Sve ide u sam tekst obima</h4>
+<p>Ne postoje posebna polja za izuzetke ili zavisnosti od trećih strana - sve to piše se direktno u tekstu obima, prirodnim jezikom. Na primer: "ISMS obuhvata sve informacione sisteme i osoblje u kancelariji u Beogradu. Van obima je ogranak u Novom Sadu, jer ne obrađuje podatke klijenata. Hosting produkcionih servera je kod eksternog cloud dobavljača, uređeno ugovorom o nivou usluge."</p>
+ 
 <h4>Izuzeci moraju imati obrazloženje</h4>
-<p>Nije dovoljno reći "X nije uključeno" - mora se objasniti zašto (npr. "van kontrole firme", "ne obrađuje podatke klijenata").</p>
+<p>Nije dovoljno reći "X nije uključeno" - u istoj rečenici objasni i zašto (npr. "jer ne obrađuje podatke klijenata", "van kontrole firme").</p>
+ 
 <h4>Verzionisanje</h4>
-<p>Nova verzija ne briše staru - stara ostaje u istoriji sa svojim tadašnjim izuzecima, tačno kakva je bila važeća u tom trenutku. To je sam trag audita kroz vreme.</p>'),
+<p>Svaka nova verzija se čuva kao poseban zapis - stara ne nestaje, ostaje u istoriji ispod, tačno onakva kakva je bila važeća u tom trenutku. To je sam trag audita kroz vreme.</p>'
+),
 ('liderstvo', 'Pomoć — Liderstvo i posvećenost',
 '<p>Klauzula 5.1 traži da top menadžment demonstrira liderstvo i posvećenost ISMS-u. Ova stranica nema svoju tabelu - sažima dokaze te posvećenosti iz drugih delova aplikacije.</p>
 <h4>Šta pokazuju brojke</h4>

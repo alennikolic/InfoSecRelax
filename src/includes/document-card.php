@@ -8,8 +8,11 @@
  * redova iz document_versions za taj dokument, spojenih LEFT JOIN-om
  * sa personnel radi changed_by_name; može biti prazan niz) već
  * postavljeni pre uključivanja ovog fajla - deli scope sa foreach
- * petljom iz koje se poziva. Takođe očekuje $activePersonnelOptions,
- * postavljen jednom u dokumenti.php pre foreach petlje.
+ * petljom iz koje se poziva.
+ *
+ * "Nova verzija" ne otvara više ugrađenu formu u kartici - otvara
+ * zajednički modal na nivou stranice (modules/dokumenti.php), isti
+ * obrazac kao "Nova verzija" u policy-card.php.
  */
 
 $docTypeLabels = [
@@ -39,7 +42,21 @@ $isReviewOverdue = !empty($document['next_review_due']) && $document['next_revie
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($document['title']) ?></span>
-        <span class="factor-category"><?= htmlspecialchars($docTypeLabels[$document['doc_type']] ?? $document['doc_type']) ?></span>
+        <div class="button-group">
+            <span class="factor-category"><?= htmlspecialchars($docTypeLabels[$document['doc_type']] ?? $document['doc_type']) ?></span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditDocumentModal(<?= json_encode([
+                    "id"              => (int) $document["id"],
+                    "title"           => $document["title"],
+                    "doc_type"        => $document["doc_type"],
+                    "classification"  => $document["classification"],
+                    "file_reference"  => $document["file_reference"] ?? "",
+                    "owner_id"        => $document["owner_id"] ?? "",
+                    "approved_by"     => $document["approved_by"] ?? "",
+                    "approved_at"     => $document["approved_at"] ?? "",
+                    "next_review_due" => $document["next_review_due"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <p>
@@ -97,41 +114,10 @@ $isReviewOverdue = !empty($document['next_review_due']) && $document['next_revie
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="add_version">
-        <input type="hidden" name="document_id" value="<?= (int) $document['id'] ?>">
+    <button type="button" class="btn-secondary"
+        onclick='openDocumentVersionModal(<?= (int) $document['id'] ?>, <?= json_encode($document['title'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Nova verzija</button>
 
-        <div class="form-row">
-            <label for="version_number_<?= (int) $document['id'] ?>">Nova verzija</label>
-            <input type="text" name="version_number" id="version_number_<?= (int) $document['id'] ?>" required
-                placeholder="npr. 1.1">
-        </div>
-
-        <div class="form-row">
-            <label for="change_summary_<?= (int) $document['id'] ?>">Šta je izmenjeno (opciono)</label>
-            <textarea name="change_summary" id="change_summary_<?= (int) $document['id'] ?>" rows="2"
-                placeholder="npr. Dodat postupak za testiranje obnavljanja rezervnih kopija."></textarea>
-        </div>
-
-        <div class="form-row">
-            <label for="file_reference_<?= (int) $document['id'] ?>">Putanja ili URL do fajla (opciono)</label>
-            <input type="text" name="file_reference" id="file_reference_<?= (int) $document['id'] ?>">
-        </div>
-
-        <div class="form-row">
-            <label for="changed_by_<?= (int) $document['id'] ?>">Izmenio (opciono)</label>
-            <select name="changed_by" id="changed_by_<?= (int) $document['id'] ?>">
-                <option value="">Nije dodeljen</option>
-                <?php foreach ($activePersonnelOptions as $option): ?>
-                    <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <button type="submit" class="btn-secondary">Sačuvaj novu verziju</button>
-    </form>
-
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj dokument i celu istoriju njegovih verzija?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj dokument i celu istoriju njegovih verzija?');">
         <input type="hidden" name="action" value="delete_document">
         <input type="hidden" name="id" value="<?= (int) $document['id'] ?>">
         <button type="submit" class="btn-delete">Obriši dokument</button>
