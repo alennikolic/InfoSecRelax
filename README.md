@@ -59,7 +59,7 @@ InfoSecRelax/
 ├── docker-compose.yml
 ├── db/
 │   ├── init.sql                (kompletna šema + seed podaci - pokreće se samo na SVEŽOJ instalaciji)
-│   └── migrations/              (dopune šeme za postojeću bazu, videti ispod)
+│   └── demo-data.sql              (demo podaci)
 └── src/
     ├── index.php                 (jedina ulazna tačka / ruter)
     ├── config/
