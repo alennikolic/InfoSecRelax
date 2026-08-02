@@ -12,9 +12,22 @@
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($record['person_name']) ?></span>
-        <?php if ($record['role_name'] !== null): ?>
-            <span class="factor-category"><?= htmlspecialchars($record['role_name']) ?></span>
-        <?php endif; ?>
+        <div class="button-group">
+            <?php if ($record['role_name'] !== null): ?>
+                <span class="factor-category"><?= htmlspecialchars($record['role_name']) ?></span>
+            <?php endif; ?>
+            <button type="button" class="btn-secondary"
+                onclick='openEditCompetenceModal(<?= json_encode([
+                    "id"                  => (int) $record["id"],
+                    "personnel_id"        => (int) $record["personnel_id"],
+                    "role_id"             => $record["role_id"] ?? "",
+                    "required_competence" => $record["required_competence"],
+                    "gap_identified"      => $record["gap_identified"] ?? "",
+                    "action_taken"        => $record["action_taken"] ?? "",
+                    "evaluated_effective" => $record["evaluated_effective"] ?? "",
+                    "evaluated_at"        => $record["evaluated_at"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <p><strong>Potrebna kompetencija:</strong> <?= nl2br(htmlspecialchars($record['required_competence'])) ?></p>
