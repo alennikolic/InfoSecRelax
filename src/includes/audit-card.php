@@ -18,9 +18,20 @@ $severityTone = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title">Audit <?= htmlspecialchars($audit['audit_date']) ?></span>
-        <span class="status-badge <?= $audit['is_external_auditor'] ? 'is-neutral' : 'is-positive' ?>">
-            <?= $audit['is_external_auditor'] ? 'Spoljni auditor' : 'Interni auditor' ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= $audit['is_external_auditor'] ? 'is-neutral' : 'is-positive' ?>">
+                <?= $audit['is_external_auditor'] ? 'Spoljni auditor' : 'Interni auditor' ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditAuditModal(<?= json_encode([
+                    "id"                  => (int) $audit["id"],
+                    "audit_date"          => $audit["audit_date"],
+                    "scope"               => $audit["scope"] ?? "",
+                    "auditor_name"        => $audit["auditor_name"],
+                    "is_external_auditor" => (bool) $audit["is_external_auditor"],
+                    "report_reference"    => $audit["report_reference"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if (!empty($audit['scope'])): ?>
@@ -60,29 +71,10 @@ $severityTone = [
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="add_finding">
-        <input type="hidden" name="internal_audit_id" value="<?= (int) $audit['id'] ?>">
+    <button type="button" class="btn-secondary"
+        onclick='openFindingModal(<?= (int) $audit['id'] ?>, <?= json_encode('Audit ' . $audit['audit_date'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>+ Dodaj nalaz</button>
 
-        <div class="form-row">
-            <label for="description_<?= (int) $audit['id'] ?>">Opis nalaza</label>
-            <textarea name="description" id="description_<?= (int) $audit['id'] ?>" rows="2" required
-                placeholder="npr. Tri od deset proverenih naloga nemaju uključenu dvofaktorsku autentifikaciju."></textarea>
-        </div>
-
-        <div class="form-row">
-            <label for="severity_<?= (int) $audit['id'] ?>">Ozbiljnost</label>
-            <select name="severity" id="severity_<?= (int) $audit['id'] ?>">
-                <option value="nizak">Nizak</option>
-                <option value="srednji" selected>Srednji</option>
-                <option value="visok">Visok</option>
-            </select>
-        </div>
-
-        <button type="submit" class="btn-secondary">Dodaj nalaz</button>
-    </form>
-
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj audit i sve njegove nalaze?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj audit i sve njegove nalaze?');">
         <input type="hidden" name="action" value="delete_audit">
         <input type="hidden" name="id" value="<?= (int) $audit['id'] ?>">
         <button type="submit" class="btn-delete">Obriši audit</button>
