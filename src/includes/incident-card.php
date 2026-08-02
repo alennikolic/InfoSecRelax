@@ -42,9 +42,17 @@ $isClosed = !empty($event['closed_at']);
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title">Prijavljeno <?= htmlspecialchars(substr((string) $event['reported_at'], 0, 16)) ?></span>
-        <span class="status-badge <?= htmlspecialchars($assessmentTone[$event['assessment_outcome']] ?? 'is-neutral') ?>">
-            <?= htmlspecialchars($assessmentLabels[$event['assessment_outcome']] ?? $event['assessment_outcome']) ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($assessmentTone[$event['assessment_outcome']] ?? 'is-neutral') ?>">
+                <?= htmlspecialchars($assessmentLabels[$event['assessment_outcome']] ?? $event['assessment_outcome']) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditEventModal(<?= json_encode([
+                    "id"          => (int) $event["id"],
+                    "description" => $event["description"],
+                    "reported_by" => $event["reported_by"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <p><?= nl2br(htmlspecialchars($event['description'])) ?></p>
@@ -125,7 +133,7 @@ $isClosed = !empty($event['closed_at']);
         <button type="submit" class="btn-secondary">Sačuvaj procenu</button>
     </form>
 
-    <div class="card-actions">
+    <div class="card-actions card-footer-right">
         <?php if ($isClosed): ?>
             <form method="post" class="factor-delete-form">
                 <input type="hidden" name="action" value="reopen">
