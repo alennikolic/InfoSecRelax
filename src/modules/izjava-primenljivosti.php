@@ -25,9 +25,12 @@
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../includes/help-content.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
+
+$pageSlug = 'izjava-primenljivosti';
 
 // Bootstrap: osiguraj da za organizaciju postoji tačno jedan red po
 // svakoj od 93 kontrole. justification je NOT NULL bez podrazumevane
@@ -189,11 +192,17 @@ if (!empty($control)) {
         $controlsByTheme[$row['theme']][] = $row;
     }
 }
+
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
 ?>
 
 <?php if (!empty($control)): ?>
 
-    <a class="back-link" href="?page=izjava-primenljivosti">← Nazad na spisak</a>
+    <div class="toolbar">
+        <a class="back-link" href="?page=izjava-primenljivosti">← Nazad na spisak</a>
+        <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+    </div>
 
     <div class="scope-current">
         <div class="card-header-row">
@@ -272,11 +281,9 @@ if (!empty($control)) {
 
 <?php else: ?>
 
-    <p class="module-intro">
-        Klauzula 6.1.3(d) traži da se za svaku kontrolu iz Aneksa A odluči da li
-        je primenljiva i obrazloži zašto - u oba slučaja. Klikni "Uredi" na
-        kontroli da uneseš odluku.
-    </p>
+    <div class="toolbar-right">
+        <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+    </div>
 
     <div class="soa-summary">
         <div class="soa-summary-stat">
@@ -336,3 +343,5 @@ if (!empty($control)) {
     <?php endforeach; ?>
 
 <?php endif; ?>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
