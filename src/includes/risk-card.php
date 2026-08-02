@@ -54,10 +54,24 @@ $treatmentOptionLabels = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($risk['title']) ?></span>
-        <span class="status-badge <?= htmlspecialchars($riskLevelTone[$risk['risk_level']] ?? 'is-neutral') ?>">
-            <?= htmlspecialchars($riskLevelLabels[$risk['risk_level']] ?? 'Nije izračunato') ?>
-            (<?= (int) $risk['likelihood'] ?> × <?= (int) $risk['impact'] ?> = <?= (int) $risk['risk_score'] ?>)
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($riskLevelTone[$risk['risk_level']] ?? 'is-neutral') ?>">
+                <?= htmlspecialchars($riskLevelLabels[$risk['risk_level']] ?? 'Nije izračunato') ?>
+                (<?= (int) $risk['likelihood'] ?> × <?= (int) $risk['impact'] ?> = <?= (int) $risk['risk_score'] ?>)
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditRiskModal(<?= json_encode([
+                    "id"                        => (int) $risk["id"],
+                    "title"                     => $risk["title"],
+                    "threat_description"        => $risk["threat_description"],
+                    "vulnerability_description" => $risk["vulnerability_description"],
+                    "asset_id"                  => $risk["asset_id"] ?? "",
+                    "likelihood"                => (int) $risk["likelihood"],
+                    "impact"                    => (int) $risk["impact"],
+                    "identified_at"             => $risk["identified_at"],
+                    "review_trigger"            => $risk["review_trigger"],
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <p><strong>Pretnja:</strong> <?= nl2br(htmlspecialchars($risk['threat_description'])) ?></p>
