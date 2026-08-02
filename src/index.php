@@ -5,10 +5,15 @@
  * Ruta se određuje preko ?page=slug. Tri grane, u ovom redosledu:
  *
  *   1. Niko nije ulogovan       -> jedino "prijava" je dostupna.
- *   2. Ulogovan super admin     -> jedino "organizacije" je dostupna
- *                                  (kreiranje novih firmi). Super admin
- *                                  nema organization_id/role_id, pa ne
- *                                  prolazi kroz role_page_permissions.
+ *   2. Ulogovan super admin     -> "organizacije" (kreiranje novih
+ *                                  firmi) i "pomoc-uredjivanje"
+ *                                  (help_content NIJE multi-tenant -
+ *                                  deljen je kroz celu aplikaciju, pa
+ *                                  namerno nije deo RBAC-a nijedne
+ *                                  organizacije, videti config/menu.php).
+ *                                  Super admin nema organization_id/
+ *                                  role_id, pa ne prolazi kroz
+ *                                  role_page_permissions.
  *   3. Ulogovan organizacioni
  *      korisnik                 -> standardni ISO meni iz config/menu.php,
  *                                  filtriran na stranice gde njegova rola
@@ -63,17 +68,31 @@ if ($user === null) {
 }
 
 // =====================================================================
-// GRANA 2: super admin (nema organizaciju - upravlja samo organizacijama)
+// GRANA 2: super admin (nema organizaciju - upravlja organizacijama i
+// jedinim GLOBALNIM, ne-multi-tenant sadržajem aplikacije - help_content)
 // =====================================================================
 if ((bool) $user['is_super_admin']) {
-    $menu = [
-        ['slug' => 'organizacije', 'title' => 'Organizacije', 'iso_ref' => null, 'group' => null],
+    $superAdminMenu = [
+        ['slug' => 'organizacije',       'title' => 'Organizacije',        'iso_ref' => null, 'group' => null],
+        ['slug' => 'pomoc-uredjivanje',  'title' => 'Uređivanje pomoći',   'iso_ref' => null, 'group' => null],
     ];
-    $requestedSlug = 'organizacije';
-    $currentItem   = $menu[0];
+
+    $currentItem = null;
+    foreach ($superAdminMenu as $item) {
+        if ($item['slug'] === $requestedSlug) {
+            $currentItem = $item;
+            break;
+        }
+    }
+    if ($currentItem === null) {
+        $currentItem   = $superAdminMenu[0];
+        $requestedSlug = $superAdminMenu[0]['slug'];
+    }
+
+    $menu = $superAdminMenu;
 
     require __DIR__ . '/includes/header.php';
-    require __DIR__ . '/modules/organizacije.php';
+    require __DIR__ . '/modules/' . $requestedSlug . '.php';
     require __DIR__ . '/includes/footer.php';
     exit;
 }
