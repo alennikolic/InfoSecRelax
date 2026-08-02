@@ -93,8 +93,11 @@ nema javne "Registruj firmu" forme.
 | Demo (organizacija "Moja firma", rola Administrator) | `demo@demo.local` | `AiSSPhTjXRFZox6eXZfH` |
 
 **Obavezno promeniti/ukloniti oba naloga** ako instalacija ikad postane
-dostupna van lokalnog razvojnog okruženja — lozinke su namerno trivijalne
-ili javno zapisane u ovom README-u.
+dostupna van lokalnog razvojnog okruženja — obe lozinke su javno zapisane u
+ovom README-u. Napomena: demo nalog trenutno koristi ISTU lozinku kao super
+admin — ko god dobije demo pristup, zna i lozinku platformskog naloga koji
+može da kreira/upravlja svim firmama na instalaciji. Za lokalni razvoj nije
+problem, ali vredi razdvojiti lozinke pre bilo kakvog deljenja pristupa.
 
 ## Tehnologije
 
