@@ -60,5 +60,5 @@
     <?php endif; ?>
 
     <button type="button" class="btn-secondary"
-        onclick="openAddRequirementModal(<?= (int) $party['id'] ?>, <?= json_encode($party['name'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)">+ Dodaj zahtev</button>
+        onclick='openAddRequirementModal(<?= (int) $party['id'] ?>, <?= json_encode($party['name'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>+ Dodaj zahtev</button>
 </div>
