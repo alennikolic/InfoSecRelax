@@ -7,8 +7,10 @@
  * supplier_reviews za tog dobavljača, spojenih LEFT JOIN-om sa
  * personnel radi reviewer_name; može biti prazan niz) već postavljeni
  * pre uključivanja ovog fajla - deli scope sa foreach petljom iz koje
- * se poziva. Takođe očekuje $activePersonnelOptions, postavljen jednom
- * u dobavljaci.php pre foreach petlje.
+ * se poziva.
+ *
+ * "+ Dodaj pregled" ne otvara više ugrađenu formu u kartici - otvara
+ * zajednički modal na nivou stranice (modules/dobavljaci.php).
  */
 
 $riskLevelTone = [
@@ -28,9 +30,25 @@ $checks = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($supplier['name']) ?></span>
-        <span class="status-badge <?= htmlspecialchars($riskLevelTone[$supplier['risk_level']] ?? 'is-neutral') ?>">
-            Rizik: <?= htmlspecialchars(ucfirst($supplier['risk_level'])) ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($riskLevelTone[$supplier['risk_level']] ?? 'is-neutral') ?>">
+                Rizik: <?= htmlspecialchars(ucfirst($supplier['risk_level'])) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditSupplierModal(<?= json_encode([
+                    "id"                      => (int) $supplier["id"],
+                    "name"                    => $supplier["name"],
+                    "risk_level"              => $supplier["risk_level"],
+                    "has_data_access"         => (bool) $supplier["has_data_access"],
+                    "is_cloud_service"        => (bool) $supplier["is_cloud_service"],
+                    "dpa_signed"              => (bool) $supplier["dpa_signed"],
+                    "exit_strategy_confirmed" => (bool) $supplier["exit_strategy_confirmed"],
+                    "subprocessors_reviewed"  => (bool) $supplier["subprocessors_reviewed"],
+                    "sla_requirements"        => $supplier["sla_requirements"] ?? "",
+                    "contract_start"          => $supplier["contract_start"] ?? "",
+                    "contract_end"            => $supplier["contract_end"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <p>
@@ -89,36 +107,10 @@ $checks = [
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="add_review">
-        <input type="hidden" name="supplier_id" value="<?= (int) $supplier['id'] ?>">
+    <button type="button" class="btn-secondary"
+        onclick='openReviewModal(<?= (int) $supplier['id'] ?>, <?= json_encode($supplier['name'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>+ Dodaj pregled</button>
 
-        <div class="form-row">
-            <label for="review_date_<?= (int) $supplier['id'] ?>">Datum pregleda</label>
-            <input type="date" name="review_date" id="review_date_<?= (int) $supplier['id'] ?>" required
-                value="<?= date('Y-m-d') ?>">
-        </div>
-
-        <div class="form-row">
-            <label for="findings_<?= (int) $supplier['id'] ?>">Nalazi (opciono)</label>
-            <textarea name="findings" id="findings_<?= (int) $supplier['id'] ?>" rows="2"
-                placeholder="npr. Dobavljač je promenio podizvođača za skladištenje podataka."></textarea>
-        </div>
-
-        <div class="form-row">
-            <label for="reviewed_by_<?= (int) $supplier['id'] ?>">Pregledao (opciono)</label>
-            <select name="reviewed_by" id="reviewed_by_<?= (int) $supplier['id'] ?>">
-                <option value="">Nije dodeljen</option>
-                <?php foreach ($activePersonnelOptions as $option): ?>
-                    <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <button type="submit" class="btn-secondary">Dodaj pregled</button>
-    </form>
-
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovog dobavljača i sve njegove preglede?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovog dobavljača i sve njegove preglede?');">
         <input type="hidden" name="action" value="delete_supplier">
         <input type="hidden" name="id" value="<?= (int) $supplier['id'] ?>">
         <button type="submit" class="btn-delete">Obriši dobavljača</button>
