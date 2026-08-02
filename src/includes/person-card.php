@@ -17,9 +17,20 @@ $employmentTypeLabels = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($person['full_name']) ?></span>
-        <span class="factor-category">
-            <?= htmlspecialchars($employmentTypeLabels[$person['employment_type']] ?? $person['employment_type']) ?>
-        </span>
+        <div class="button-group">
+            <span class="factor-category">
+                <?= htmlspecialchars($employmentTypeLabels[$person['employment_type']] ?? $person['employment_type']) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditPersonModal(<?= json_encode([
+                    "id"              => (int) $person["id"],
+                    "full_name"       => $person["full_name"],
+                    "employment_type" => $person["employment_type"],
+                    "job_title"       => $person["job_title"] ?? "",
+                    "email"           => $person["email"] ?? "",
+                    "start_date"      => $person["start_date"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if (!empty($person['job_title'])): ?>
