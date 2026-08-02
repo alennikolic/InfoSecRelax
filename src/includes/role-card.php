@@ -11,9 +11,20 @@
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($role['role_name']) ?></span>
-        <?php if (!empty($role['related_control_ref'])): ?>
-            <span class="factor-category"><?= htmlspecialchars($role['related_control_ref']) ?></span>
-        <?php endif; ?>
+        <div class="button-group">
+            <?php if (!empty($role['related_control_ref'])): ?>
+                <span class="factor-category"><?= htmlspecialchars($role['related_control_ref']) ?></span>
+            <?php endif; ?>
+            <button type="button" class="btn-secondary"
+                onclick='openEditRoleModal(<?= json_encode([
+                    "id"                  => (int) $role["id"],
+                    "role_name"           => $role["role_name"],
+                    "description"         => $role["description"] ?? "",
+                    "assigned_to"         => $role["assigned_to"] ?? "",
+                    "authority_level"     => $role["authority_level"] ?? "",
+                    "related_control_ref" => $role["related_control_ref"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if (!empty($role['description'])): ?>
