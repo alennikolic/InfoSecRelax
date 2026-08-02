@@ -875,3 +875,30 @@ body {
     gap: 0.35rem;
     white-space: nowrap;
 }
+
+/* src/assets/style.css */
+/*
+ * DODATAK - nalepiti na kraj postojećeg style.css (posle prethodne
+ * RBAC dopune - style-rbac-addition.css). Stilizuje .demo-hint okvir
+ * dodat u modules/prijava.php.
+ */
+
+.demo-hint {
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px dashed rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+.demo-hint p {
+    margin: 0.25rem 0;
+}
+
+.demo-hint code {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.85em;
+}
