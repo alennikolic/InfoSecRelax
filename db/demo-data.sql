@@ -34,8 +34,6 @@ TRUNCATE TABLE policies;
 TRUNCATE TABLE documents;
 TRUNCATE TABLE interested_party_requirements;
 TRUNCATE TABLE interested_parties;
-TRUNCATE TABLE scope_exclusions;
-TRUNCATE TABLE third_party_dependencies;
 TRUNCATE TABLE scope_statements;
 TRUNCATE TABLE context_factors;
 TRUNCATE TABLE roles_responsibilities;
