@@ -37,11 +37,14 @@
  *     korisnika aplikacije, ne greška - ako se ikad vrati na strogi
  *     redosled standarda, samo zameniti mesta ova dva bloka.
  *
- * NAPOMENA (RBAC): "prijava", "odjava" i "organizacije" NAMERNO NISU
- * ovde - to su rute van organizacionog RBAC-a (prijava je dostupna bez
- * ikakve prijave, organizacije je isključivo za super admina koji nema
- * organization_id/role_id). index.php ih rutira posebno, pre nego što
- * uopšte pogleda ovaj niz. Videti config/auth.php i index.php.
+ * NAPOMENA (RBAC): "prijava", "odjava", "organizacije" i
+ * "pomoc-uredjivanje" NAMERNO NISU ovde - to su rute van organizacionog
+ * RBAC-a. "pomoc-uredjivanje" je premešteno u super-admin granu jer
+ * uređuje help_content tabelu koja NIJE multi-tenant (jedan red po
+ * page_slug, deljen kroz CELU aplikaciju) - da je ostalo ovde, admin
+ * bilo koje organizacije bi mogao da menja tekst pomoći koji vide sve
+ * ostale firme. index.php ih rutira posebno, pre nego što uopšte
+ * pogleda ovaj niz. Videti config/auth.php i index.php.
  */
 
 return [
@@ -91,7 +94,6 @@ return [
     ['slug' => 'korektivne-mere',          'title' => 'Korektivne mere',            'iso_ref' => 'Klauzula 10.2',             'group' => 'Unapređenje'],
 
     // --- Alati (van standarda - administrativne funkcije aplikacije) ---
-    ['slug' => 'pomoc-uredjivanje',        'title' => 'Uređivanje pomoći',          'iso_ref' => null,                        'group' => 'Alati'],
     ['slug' => 'korisnici',                'title' => 'Korisnici',                  'iso_ref' => null,                        'group' => 'Alati'],
     ['slug' => 'role-pristup',             'title' => 'Role i prava pristupa',      'iso_ref' => null,                        'group' => 'Alati'],
 
