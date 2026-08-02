@@ -167,10 +167,8 @@ Redosled grupa "Rizik i planiranje" pre "Liderstvo" je namerna odluka
 
 Predlog redosleda, po prioritetu:
 
-1. **`?page=izjava-primenljivosti`** — jedina stranica koja nije prošla kroz
-   noviji obrazac (toolbar, modal, Pomoć dugme).
-2. **CSRF zaštita** na formama.
-3. **Autentifikacija i registracija firmi** — kad se doda, `organization_id`
+1. **CSRF zaštita** na formama.
+2. **Autentifikacija i registracija firmi** — kad se doda, `organization_id`
    prestaje da bude uvek `1` (videti napomenu u `database.php`).
-4. Opciono: prebaciti preostala ugrađena ugnježdena dodavanja (prisustvo na
+3. Opciono: prebaciti preostala ugrađena ugnježdena dodavanja (prisustvo na
    obuci i sl.) na isti modal obrazac, radi potpune doslednosti.
