@@ -112,33 +112,8 @@ $alreadyAcknowledgedIds = array_map('intval', array_column($acknowledgments, 'pe
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="add_version">
-        <input type="hidden" name="policy_id" value="<?= (int) $policy['id'] ?>">
-
-        <div class="form-row">
-            <label for="version_number_<?= (int) $policy['id'] ?>">Nova verzija</label>
-            <input type="text" name="version_number" id="version_number_<?= (int) $policy['id'] ?>" required
-                placeholder="npr. 1.1">
-        </div>
-
-        <div class="form-row">
-            <label for="change_summary_<?= (int) $policy['id'] ?>">Šta je izmenjeno (opciono)</label>
-            <textarea name="change_summary" id="change_summary_<?= (int) $policy['id'] ?>" rows="2"></textarea>
-        </div>
-
-        <div class="form-row">
-            <label for="changed_by_<?= (int) $policy['id'] ?>">Izmenio (opciono)</label>
-            <select name="changed_by" id="changed_by_<?= (int) $policy['id'] ?>">
-                <option value="">Nije dodeljen</option>
-                <?php foreach ($activePersonnelOptions as $option): ?>
-                    <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <button type="submit" class="btn-secondary">Sačuvaj novu verziju</button>
-    </form>
+    <button type="button" class="btn-secondary"
+        onclick='openPolicyVersionModal(<?= (int) $policy['id'] ?>, <?= json_encode($policy['title'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Nova verzija</button>
 
     <p class="item-title">Potvrde zaposlenih (<?= $acknowledgedCount ?> od <?= $activeCount ?> aktivnih)</p>
     <?php if (empty($acknowledgments)): ?>
