@@ -31,9 +31,20 @@ $statusTone = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($resourceTypeLabels[$resource['resource_type']] ?? $resource['resource_type']) ?></span>
-        <span class="status-badge <?= htmlspecialchars($statusTone[$resource['status']] ?? 'is-neutral') ?>">
-            <?= htmlspecialchars($statusLabels[$resource['status']] ?? $resource['status']) ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($statusTone[$resource['status']] ?? 'is-neutral') ?>">
+                <?= htmlspecialchars($statusLabels[$resource['status']] ?? $resource['status']) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditResourceModal(<?= json_encode([
+                    "id"                 => (int) $resource["id"],
+                    "resource_type"      => $resource["resource_type"],
+                    "description"        => $resource["description"],
+                    "amount_or_quantity" => $resource["amount_or_quantity"] ?? "",
+                    "provided_by"        => $resource["provided_by"] ?? "",
+                    "review_date"        => $resource["review_date"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <p><?= nl2br(htmlspecialchars($resource['description'])) ?></p>
@@ -68,7 +79,7 @@ $statusTone = [
         </div>
     </form>
 
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj resurs?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj resurs?');">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="id" value="<?= (int) $resource['id'] ?>">
         <button type="submit" class="btn-delete">Obriši</button>
