@@ -15,10 +15,21 @@
  *     require __DIR__ . '/../config/database.php';
  *     $pdo = getDbConnection();
  *     $stmt = $pdo->query('SELECT * FROM context_factors WHERE organization_id = 1');
+ *
+ * IZMENA (RBAC): funkcije su omotane u function_exists() provere. Razlog:
+ * config/auth.php sada učitava ovaj fajl preko require_once JEDNOM, na
+ * samom početku, u index.php - pre nego što se učita header.php ili bilo
+ * koji modul. Svaki modul i dalje, kao i do sada, samostalno radi
+ * "require __DIR__ . '/../config/database.php';" (plain require, ne
+ * require_once) na svom vrhu - bez ove provere, to bi izazvalo fatalnu
+ * grešku "Cannot redeclare getDbConnection()" jer plain require ne
+ * proverava da li je fajl već učitan preko require_once. Ponašanje
+ * funkcija ispod je nepromenjeno.
  */
 
 declare(strict_types=1);
 
+if (!function_exists('getDbConnection')) {
 function getDbConnection(): PDO
 {
     static $pdo = null;
@@ -41,18 +52,22 @@ function getDbConnection(): PDO
 
     return $pdo;
 }
+}
 
+if (!function_exists('ensureDefaultOrganization')) {
 /**
- * Privremeno rešenje dok ne postoji prijava/registracija firmi:
- * osigurava da organizacija sa id=1 postoji, kako bi svi moduli imali
- * na šta da se oslone preko organization_id. Bezbedno se poziva
- * ponovljeno - INSERT IGNORE ne radi ništa ako red već postoji.
- *
- * TODO: ukloniti kad se doda prava registracija/prijava firmi i
- * organization_id počne da dolazi iz sesije ulogovanog korisnika.
+ * Istorijsko ime iz perioda pre multi-tenant prijave - i dalje se
+ * poziva iz mnogo modula. Sada samo garantuje da organizacija sa id=1
+ * postoji (korisno za razvojno okruženje / prvu organizaciju), ali
+ * VIŠE NE ODREĐUJE koja je organizacija "trenutna" - to sada radi
+ * isključivo config/auth.php preko sesije ulogovanog korisnika
+ * (currentUser()['organization_id']). Moduli treba postepeno da pređu
+ * sa "ensureDefaultOrganization($pdo)" na
+ * "requireAuth()['organization_id']" (videti config/auth.php).
  */
 function ensureDefaultOrganization(PDO $pdo): int
 {
     $pdo->exec("INSERT IGNORE INTO organizations (id, name) VALUES (1, 'Moja firma')");
     return 1;
+}
 }
