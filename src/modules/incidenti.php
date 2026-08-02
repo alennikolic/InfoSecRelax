@@ -11,9 +11,10 @@
  *
  * Prijava je namerno minimalna (opis + ko prijavljuje, opciono) - modal
  * za "+ Prijavi događaj" i "Uredi" menjaju samo ta dva polja. Procena
- * (ishod, ozbiljnost, koren uzroka, dokazi) ostaje poseban, bogatiji
- * tok kroz "update_assessment" - inline forma u kartici, ne modal, isti
- * princip kao status kod rizika/ciljeva/promena.
+ * (ishod, ozbiljnost, koren uzroka, dokazi) je poseban modal ("Pokreni
+ * procenu", otvoren dugmetom u kartici) - rezultati ostaju prikazani u
+ * telu kartice bez obzira da li je modal otvoren, menja se samo to gde
+ * živi FORMA za unos.
  *
  * Formalne korektivne mere (corrective_actions, Klauzula 10.2) su
  * namerno van obima ovog modula - ta tabela je deljena i sa
@@ -275,6 +276,59 @@ $helpContent = getHelpContent($pdo, $pageSlug);
     </div>
 </div>
 
+<div class="modal-overlay" id="assessment-modal-overlay" onclick="closeAssessmentModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title">Ažuriraj procenu</span>
+            <button type="button" class="modal-close" onclick="closeAssessmentModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post">
+            <input type="hidden" name="action" value="update_assessment">
+            <input type="hidden" name="id" id="assessment-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_assessment_outcome">Ishod procene</label>
+                <select name="assessment_outcome" id="modal_assessment_outcome">
+                    <option value="na_cekanju">Na čekanju</option>
+                    <option value="lazna_uzbuna">Lažna uzbuna</option>
+                    <option value="potvrdjen_incident">Potvrđen incident</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_severity">Ozbiljnost</label>
+                <select name="severity" id="modal_severity">
+                    <option value="">Nije određeno</option>
+                    <option value="nizak">Nizak</option>
+                    <option value="srednji">Srednji</option>
+                    <option value="visok">Visok</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_root_cause">Koren uzroka (opciono)</label>
+                <textarea name="root_cause" id="modal_root_cause" rows="2"
+                    placeholder="npr. Zaposleni nisu prošli obuku o prepoznavanju phishing e-mailova."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_evidence_reference">Referenca na dokaze (opciono)</label>
+                <input type="text" name="evidence_reference" id="modal_evidence_reference"
+                    placeholder="npr. Snimak ekrana sačuvan u /dokazi/incident-42.png">
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromAssessmentModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeAssessmentModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <?php include __DIR__ . '/../includes/help-modal.php'; ?>
 
 <script>
@@ -305,9 +359,28 @@ function openHelpFromEventModal() {
     openHelpModal();
 }
 
+function openAssessmentModal(event_) {
+    document.getElementById('assessment-modal-id').value = event_.id;
+    document.getElementById('modal_assessment_outcome').value = event_.assessment_outcome;
+    document.getElementById('modal_severity').value = event_.severity;
+    document.getElementById('modal_root_cause').value = event_.root_cause;
+    document.getElementById('modal_evidence_reference').value = event_.evidence_reference;
+    document.getElementById('assessment-modal-overlay').classList.add('is-open');
+}
+
+function closeAssessmentModal() {
+    document.getElementById('assessment-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromAssessmentModal() {
+    closeAssessmentModal();
+    openHelpModal();
+}
+
 document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         closeEventModal();
+        closeAssessmentModal();
     }
 });
 </script>
