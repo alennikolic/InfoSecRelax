@@ -26,9 +26,22 @@ $statusTone = [
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($objective['title']) ?></span>
-        <span class="status-badge <?= htmlspecialchars($statusTone[$objective['status']] ?? 'is-neutral') ?>">
-            <?= htmlspecialchars($statusLabels[$objective['status']] ?? $objective['status']) ?>
-        </span>
+        <div class="button-group">
+            <span class="status-badge <?= htmlspecialchars($statusTone[$objective['status']] ?? 'is-neutral') ?>">
+                <?= htmlspecialchars($statusLabels[$objective['status']] ?? $objective['status']) ?>
+            </span>
+            <button type="button" class="btn-secondary"
+                onclick='openEditObjectiveModal(<?= json_encode([
+                    "id"                 => (int) $objective["id"],
+                    "title"              => $objective["title"],
+                    "what_will_be_done"  => $objective["what_will_be_done"],
+                    "resources_required" => $objective["resources_required"] ?? "",
+                    "owner_id"           => $objective["owner_id"] ?? "",
+                    "due_date"           => $objective["due_date"] ?? "",
+                    "evaluation_method"  => $objective["evaluation_method"] ?? "",
+                    "linked_risk_id"     => $objective["linked_risk_id"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <p><strong>Šta:</strong> <?= nl2br(htmlspecialchars($objective['what_will_be_done'])) ?></p>
@@ -70,7 +83,7 @@ $statusTone = [
         </div>
     </form>
 
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj cilj?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj cilj?');">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="id" value="<?= (int) $objective['id'] ?>">
         <button type="submit" class="btn-delete">Obriši</button>
