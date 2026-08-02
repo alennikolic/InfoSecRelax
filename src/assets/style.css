@@ -880,7 +880,8 @@ body {
 /*
  * DODATAK - nalepiti na kraj postojećeg style.css (posle prethodne
  * RBAC dopune - style-rbac-addition.css). Stilizuje .demo-hint okvir
- * dodat u modules/prijava.php.
+ * dodat u modules/prijava.php - email i lozinka svaki u svom redu, sa
+ * dugmetom za kopiranje pored svakog.
  */
 
 .demo-hint {
@@ -896,9 +897,30 @@ body {
     margin: 0.25rem 0;
 }
 
+.demo-hint-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
 .demo-hint code {
     background: rgba(0, 0, 0, 0.08);
     border-radius: 3px;
     padding: 0.1rem 0.35rem;
     font-size: 0.85em;
+}
+
+.demo-hint-copy {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+}
+
+.demo-hint-copy:hover {
+    background: rgba(0, 0, 0, 0.06);
 }
