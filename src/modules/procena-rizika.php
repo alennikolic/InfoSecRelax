@@ -632,6 +632,60 @@ $helpContent = getHelpContent($pdo, $pageSlug);
 
 <?php include __DIR__ . '/../includes/help-modal.php'; ?>
 
+<div class="modal-overlay" id="treatment-modal-overlay" onclick="closeTreatmentModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="treatment-modal-title">Dodaj meru</span>
+            <button type="button" class="modal-close" onclick="closeTreatmentModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post">
+            <input type="hidden" name="action" value="add_treatment">
+            <input type="hidden" name="risk_id" id="treatment-modal-risk-id" value="">
+
+            <div class="form-row">
+                <label for="modal_treatment_option">Način tretmana</label>
+                <select name="treatment_option" id="modal_treatment_option" required>
+                    <option value="">Izaberite...</option>
+                    <option value="smanjiti">Smanjiti</option>
+                    <option value="izbeci">Izbeći</option>
+                    <option value="preneti">Preneti</option>
+                    <option value="prihvatiti">Prihvatiti</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_treatment_description">Opis mere</label>
+                <textarea name="description" id="modal_treatment_description" rows="2" required
+                    placeholder="npr. Uključiti dvofaktorsku autentifikaciju za sve administratorske naloge."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_treatment_owner">Nosilac mere (opciono)</label>
+                <select name="owner_id" id="modal_treatment_owner">
+                    <option value="">Nije dodeljen</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_treatment_due">Rok (opciono)</label>
+                <input type="date" name="due_date" id="modal_treatment_due">
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromTreatmentModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeTreatmentModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function openAddRiskModal() {
     document.getElementById('risk-modal-title').textContent = 'Dodaj rizik';
@@ -685,10 +739,30 @@ function openHelpFromCriteriaModal() {
     openHelpModal();
 }
 
+function openTreatmentModal(riskId, riskTitle) {
+    document.getElementById('treatment-modal-title').textContent = 'Dodaj meru — ' + riskTitle;
+    document.getElementById('treatment-modal-risk-id').value = riskId;
+    document.getElementById('modal_treatment_option').value = '';
+    document.getElementById('modal_treatment_description').value = '';
+    document.getElementById('modal_treatment_owner').value = '';
+    document.getElementById('modal_treatment_due').value = '';
+    document.getElementById('treatment-modal-overlay').classList.add('is-open');
+}
+
+function closeTreatmentModal() {
+    document.getElementById('treatment-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromTreatmentModal() {
+    closeTreatmentModal();
+    openHelpModal();
+}
+
 document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         closeRiskModal();
         closeCriteriaModal();
+        closeTreatmentModal();
     }
 });
 </script>
