@@ -1155,7 +1155,7 @@ VALUES (
     1,
     (SELECT id FROM roles WHERE organization_id = 1 AND name = 'Administrator'),
     'demo@demo.local',
-    '$2b$12$TTs4CoAiFYcbT5/rIBu6GObxTaQOTTgZF9Ol0GmIrgiI1KplzhTHy',
+    '$2b$12$/Xk2WcIUuz2tnjJYclP6.uYFDyYKnMZ6J40um7e0XFj.NmBrQNJeK',
     TRUE,
     FALSE
 );
