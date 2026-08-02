@@ -1154,7 +1154,7 @@ INSERT IGNORE INTO users (organization_id, role_id, email, password_hash, is_act
 VALUES (
     1,
     (SELECT id FROM roles WHERE organization_id = 1 AND name = 'Administrator'),
-    'demo',
+    'demo@demo.local',
     '$2b$12$TTs4CoAiFYcbT5/rIBu6GObxTaQOTTgZF9Ol0GmIrgiI1KplzhTHy',
     TRUE,
     FALSE
