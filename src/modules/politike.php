@@ -497,6 +497,49 @@ $helpContent = getHelpContent($pdo, $pageSlug);
 
 <?php include __DIR__ . '/../includes/help-modal.php'; ?>
 
+<div class="modal-overlay" id="policy-version-modal-overlay" onclick="closePolicyVersionModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="policy-version-modal-title">Nova verzija</span>
+            <button type="button" class="modal-close" onclick="closePolicyVersionModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post">
+            <input type="hidden" name="action" value="add_version">
+            <input type="hidden" name="policy_id" id="policy-version-modal-policy-id" value="">
+
+            <div class="form-row">
+                <label for="modal_version_number">Nova verzija</label>
+                <input type="text" name="version_number" id="modal_version_number" required
+                    placeholder="npr. 1.1">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_change_summary">Šta je izmenjeno (opciono)</label>
+                <textarea name="change_summary" id="modal_change_summary" rows="2"></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_changed_by">Izmenio (opciono)</label>
+                <select name="changed_by" id="modal_changed_by">
+                    <option value="">Nije dodeljen</option>
+                    <?php foreach ($activePersonnelOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromPolicyVersionModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closePolicyVersionModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 function openAddPolicyModal() {
     document.getElementById('policy-modal-title').textContent = 'Dodaj politiku';
@@ -544,9 +587,28 @@ function openHelpFromPolicyModal() {
     openHelpModal();
 }
 
+function openPolicyVersionModal(policyId, policyTitle) {
+    document.getElementById('policy-version-modal-title').textContent = 'Nova verzija — ' + policyTitle;
+    document.getElementById('policy-version-modal-policy-id').value = policyId;
+    document.getElementById('modal_version_number').value = '';
+    document.getElementById('modal_change_summary').value = '';
+    document.getElementById('modal_changed_by').value = '';
+    document.getElementById('policy-version-modal-overlay').classList.add('is-open');
+}
+
+function closePolicyVersionModal() {
+    document.getElementById('policy-version-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromPolicyVersionModal() {
+    closePolicyVersionModal();
+    openHelpModal();
+}
+
 document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         closePolicyModal();
+        closePolicyVersionModal();
     }
 });
 </script>
