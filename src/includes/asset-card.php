@@ -1,82 +1,70 @@
 <?php
 /**
- * src/includes/audit-card.php - prikaz jednog internog audita i
- * njegovih nalaza (Klauzula 9.2).
+ * src/includes/asset-card.php - prikaz jednog sredstva iz popisa.
  *
- * Očekuje da su $audit (red iz internal_audits) i $findings (niz
- * redova iz audit_findings za taj audit; može biti prazan niz) već
- * postavljeni pre uključivanja ovog fajla - deli scope sa foreach
- * petljom iz koje se poziva.
+ * Očekuje da je $asset (red iz assets, spojen LEFT JOIN-om sa personnel
+ * radi kolone owner_name) već postavljen pre uključivanja ovog fajla -
+ * deli scope sa foreach petljom iz koje se poziva.
  */
 
-$severityTone = [
-    'nizak'   => 'is-positive',
-    'srednji' => 'is-warning',
-    'visok'   => 'is-danger',
+$assetTypeLabels = [
+    'informacija' => 'Informacija',
+    'hardver'     => 'Hardver',
+    'softver'     => 'Softver',
+    'usluga'      => 'Usluga',
+    'ljudi'       => 'Ljudi',
+];
+
+$classificationLabels = [
+    'javno'             => 'Javno',
+    'interno'           => 'Interno',
+    'poverljivo'        => 'Poverljivo',
+    'strogo_poverljivo' => 'Strogo poverljivo',
+];
+
+$classificationTone = [
+    'javno'             => 'is-neutral',
+    'interno'           => 'is-neutral',
+    'poverljivo'        => 'is-warning',
+    'strogo_poverljivo' => 'is-danger',
 ];
 ?>
 <div class="factor-card">
     <div class="card-header-row">
-        <span class="card-title">Audit <?= htmlspecialchars($audit['audit_date']) ?></span>
+        <span class="card-title"><?= htmlspecialchars($asset['name']) ?></span>
         <div class="button-group">
-            <span class="status-badge <?= $audit['is_external_auditor'] ? 'is-neutral' : 'is-positive' ?>">
-                <?= $audit['is_external_auditor'] ? 'Spoljni auditor' : 'Interni auditor' ?>
+            <span class="factor-category">
+                <?= htmlspecialchars($assetTypeLabels[$asset['asset_type']] ?? $asset['asset_type']) ?>
             </span>
             <button type="button" class="btn-secondary"
-                onclick='openEditAuditModal(<?= json_encode([
-                    "id"                  => (int) $audit["id"],
-                    "audit_date"          => $audit["audit_date"],
-                    "scope"               => $audit["scope"] ?? "",
-                    "auditor_name"        => $audit["auditor_name"],
-                    "is_external_auditor" => (bool) $audit["is_external_auditor"],
-                    "report_reference"    => $audit["report_reference"] ?? "",
+                onclick='openEditAssetModal(<?= json_encode([
+                    "id"             => (int) $asset["id"],
+                    "name"           => $asset["name"],
+                    "asset_type"     => $asset["asset_type"],
+                    "description"    => $asset["description"] ?? "",
+                    "owner_id"       => $asset["owner_id"] ?? "",
+                    "classification" => $asset["classification"],
                 ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
         </div>
     </div>
 
-    <?php if (!empty($audit['scope'])): ?>
-        <p><strong>Obim:</strong> <?= nl2br(htmlspecialchars($audit['scope'])) ?></p>
+    <?php if (!empty($asset['description'])): ?>
+        <p><?= nl2br(htmlspecialchars($asset['description'])) ?></p>
     <?php endif; ?>
 
     <p class="item-meta">
-        Auditor: <?= htmlspecialchars($audit['auditor_name']) ?>
-        <?php if (!empty($audit['report_reference'])): ?>
-            · Izveštaj: <?= htmlspecialchars($audit['report_reference']) ?>
-        <?php endif; ?>
+        Vlasnik: <?= $asset['owner_name'] !== null ? htmlspecialchars($asset['owner_name']) : 'nije dodeljen' ?>
     </p>
 
-    <p class="item-title">Nalazi (<?= count($findings) ?>)</p>
+    <p>
+        <span class="status-badge <?= htmlspecialchars($classificationTone[$asset['classification']] ?? 'is-neutral') ?>">
+            <?= htmlspecialchars($classificationLabels[$asset['classification']] ?? $asset['classification']) ?>
+        </span>
+    </p>
 
-    <?php if (empty($findings)): ?>
-        <p class="empty-state">Nema zabeleženih nalaza.</p>
-    <?php else: ?>
-        <ul class="requirement-list">
-            <?php foreach ($findings as $finding): ?>
-                <li class="requirement-item">
-                    <div class="requirement-text">
-                        <?= nl2br(htmlspecialchars($finding['description'])) ?>
-                    </div>
-                    <div class="card-actions">
-                        <span class="status-badge <?= htmlspecialchars($severityTone[$finding['severity']] ?? 'is-neutral') ?>">
-                            <?= htmlspecialchars(ucfirst($finding['severity'])) ?>
-                        </span>
-                        <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj nalaz?');">
-                            <input type="hidden" name="action" value="delete_finding">
-                            <input type="hidden" name="id" value="<?= (int) $finding['id'] ?>">
-                            <button type="submit" class="btn-delete">Obriši</button>
-                        </form>
-                    </div>
-                </li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
-
-    <button type="button" class="btn-secondary"
-        onclick='openFindingModal(<?= (int) $audit['id'] ?>, <?= json_encode('Audit ' . $audit['audit_date'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>+ Dodaj nalaz</button>
-
-    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj audit i sve njegove nalaze?');">
-        <input type="hidden" name="action" value="delete_audit">
-        <input type="hidden" name="id" value="<?= (int) $audit['id'] ?>">
-        <button type="submit" class="btn-delete">Obriši audit</button>
+    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovo sredstvo?');">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="id" value="<?= (int) $asset['id'] ?>">
+        <button type="submit" class="btn-delete">Obriši</button>
     </form>
 </div>
