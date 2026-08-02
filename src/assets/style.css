@@ -1,4 +1,800 @@
 /* src/assets/style.css */
+
+/* InfoSecRelax - osnovni layout
+   Jednostavna, mirna paleta boja - dosledno sa "bez stresa" pristupom */
+
+:root {
+    --color-bg: #f7f8fa;
+    --color-surface: #ffffff;
+    --color-sidebar: #16243e;
+    --color-sidebar-text: #c9d3e0;
+    --color-sidebar-text-muted: #7c8aa3;
+    --color-accent: #2f6f4f;
+    --color-accent-soft: #eaf3ee;
+    --color-warning: #9a6b12;
+    --color-warning-soft: #fbf1de;
+    --color-danger: #a34036;
+    --color-danger-soft: #fbeae7;
+    --color-text: #1f2430;
+    --color-text-muted: #5b6472;
+    --color-border: #e3e6eb;
+    --sidebar-width: 280px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* --- Bočna navigacija --- */
+
+.sidebar {
+    width: var(--sidebar-width);
+    flex-shrink: 0;
+    background: var(--color-sidebar);
+    padding: 24px 0 40px;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    align-self: flex-start;
+}
+
+.sidebar-brand {
+    padding: 0 24px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.brand-name {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.brand-tag {
+    color: var(--color-sidebar-text-muted);
+    font-size: 12px;
+}
+
+.nav-group-title {
+    color: var(--color-sidebar-text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 18px 24px 6px;
+}
+
+.nav-link {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 24px;
+    color: var(--color-sidebar-text);
+    text-decoration: none;
+    font-size: 14px;
+    border-left: 3px solid transparent;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: #ffffff;
+}
+
+.nav-link.active {
+    background: rgba(255, 255, 255, 0.06);
+    border-left-color: var(--color-accent);
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.nav-ref {
+    font-size: 11px;
+    color: var(--color-sidebar-text-muted);
+}
+
+/* --- Glavni sadržaj --- */
+
+.main-content {
+    flex: 1;
+    padding: 32px 40px 60px;
+    max-width: 900px;
+}
+
+.content-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.content-header h1 {
+    font-size: 24px;
+    margin: 0;
+}
+
+.content-ref {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    background: var(--color-accent-soft);
+    padding: 3px 10px;
+    border-radius: 4px;
+}
+
+.content-body {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 28px;
+}
+
+/* --- Placeholder ekran --- */
+
+.placeholder-box {
+    text-align: center;
+    padding: 48px 20px;
+}
+
+.placeholder-icon {
+    display: inline-block;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+}
+
+.placeholder-box h2 {
+    margin: 0 0 12px;
+    font-size: 20px;
+}
+
+.placeholder-box p {
+    color: var(--color-text-muted);
+    max-width: 480px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* --- Uvodni tekst modula --- */
+
+.module-intro {
+    color: var(--color-text-muted);
+    line-height: 1.6;
+    margin: 0 0 24px;
+    max-width: 640px;
+}
+
+/* --- Poruke o greškama --- */
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.alert p {
+    margin: 0;
+}
+
+.alert p + p {
+    margin-top: 4px;
+}
+
+.alert-error {
+    background: #fdecea;
+    color: #7a2a20;
+    border: 1px solid #f3c6c0;
+}
+
+.alert-success {
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+}
+
+/* --- Forme --- */
+
+.form-row {
+    margin-bottom: 16px;
+}
+
+.form-row label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.form-row input[type="text"],
+.form-row input[type="date"],
+.form-row input[type="number"],
+.form-row select,
+.form-row textarea {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--color-text);
+}
+
+.form-row textarea {
+    resize: vertical;
+}
+
+.form-row-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.form-row-inline label {
+    margin-bottom: 0;
+}
+
+.form-row-inline select {
+    width: auto;
+}
+
+.form-row-inline label.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.form-row-inline .checkbox-label input[type="checkbox"] {
+    width: auto;
+}
+
+.btn-primary {
+    background: var(--color-accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+}
+
+.btn-danger {
+    background: var(--color-danger);
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-danger:hover {
+    opacity: 0.9;
+}
+
+.btn-secondary {
+    background: var(--color-surface);
+    color: var(--color-accent);
+    border: 1px solid var(--color-accent);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btn-secondary:hover {
+    background: var(--color-accent-soft);
+}
+
+.btn-delete {
+    background: none;
+    border: none;
+    color: #a34036;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+}
+
+/* --- Prikaz faktora konteksta (kontekst.php) --- */
+
+.factor-form {
+    padding-bottom: 28px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.factor-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+}
+
+.factor-column h3 {
+    font-size: 15px;
+    margin: 0 0 12px;
+}
+
+.factor-card {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+}
+
+.factor-card p {
+    margin: 6px 0 8px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.factor-category {
+    display: inline-block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.factor-delete-form {
+    margin: 0;
+}
+
+.empty-state {
+    color: var(--color-text-muted);
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* --- Prikaz zainteresovanih strana (zainteresovane-strane.php) --- */
+
+.card-header-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.card-title {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.requirement-list {
+    list-style: none;
+    margin: 0 0 14px;
+    padding: 0;
+}
+
+.requirement-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+
+.requirement-item:last-child {
+    margin-bottom: 0;
+}
+
+.requirement-text {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 6px;
+}
+
+.requirement-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.status-badge {
+    display: inline-block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.status-badge.is-positive {
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+}
+
+.status-badge.is-neutral {
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+}
+
+.status-badge.is-warning {
+    color: var(--color-warning);
+    background: var(--color-warning-soft);
+}
+
+.status-badge.is-danger {
+    color: var(--color-danger);
+    background: var(--color-danger-soft);
+}
+
+.requirement-notes {
+    font-size: 13px;
+    color: var(--color-text-muted);
+    margin: 8px 0 0;
+    line-height: 1.5;
+}
+
+.subform {
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border);
+}
+
+.item-title {
+    font-weight: 600;
+}
+
+/* --- Prikaz obima ISMS-a (obim.php) --- */
+
+.scope-current {
+    background: var(--color-accent-soft);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-accent);
+    border-radius: 6px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+}
+
+.scope-current-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.scope-version-badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    background: var(--color-accent);
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.scope-version-badge-muted {
+    background: var(--color-text-muted);
+}
+
+.item-meta {
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.scope-text {
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.scope-new-version {
+    margin-top: 8px;
+}
+
+.scope-new-version h3 {
+    font-size: 15px;
+    margin: 0 0 8px;
+}
+
+.scope-history {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+}
+
+.scope-history-item {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+}
+
+.scope-history-item:last-child {
+    margin-bottom: 0;
+}
+
+/* --- Generički naslov sekcije (izvan kartica/kolona) --- */
+
+.section-heading {
+    font-size: 15px;
+    margin: 24px 0 12px;
+}
+
+.section-heading:first-of-type {
+    margin-top: 0;
+}
+
+.back-link {
+    display: inline-block;
+    color: var(--color-accent);
+    font-size: 13px;
+    text-decoration: none;
+    margin-bottom: 16px;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* --- Izjava o primenljivosti (izjava-primenljivosti.php) --- */
+
+.soa-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 24px;
+    padding: 14px 18px;
+    background: var(--color-accent-soft);
+    border-radius: 6px;
+}
+
+.soa-summary-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.soa-summary-stat .stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-accent);
+}
+
+.soa-summary-stat .stat-label {
+    font-size: 11px;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.soa-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 28px;
+    font-size: 13px;
+}
+
+.soa-table th,
+.soa-table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--color-border);
+    vertical-align: middle;
+}
+
+.soa-table th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+.soa-table tbody tr:hover {
+    background: var(--color-bg);
+}
+
+.soa-control-ref {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+
+.soa-edit-link {
+    color: var(--color-accent);
+    font-size: 13px;
+    text-decoration: none;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.soa-edit-link:hover {
+    text-decoration: underline;
+}
+
+.dashboard-table {
+    table-layout: fixed;
+}
+
+.dashboard-table th:first-child,
+.dashboard-table td:first-child {
+    width: 320px;
+}
+
+/* --- Modalni prozorčić za dodavanje/uređivanje (kontekst.php) --- */
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(22, 36, 62, 0.5);
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-overlay.is-open {
+    display: flex;
+}
+
+.modal-box {
+    background: var(--color-surface);
+    border-radius: 8px;
+    padding: 24px;
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.modal-title {
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    padding: 0;
+}
+
+.modal-close:hover {
+    color: var(--color-text);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.modal-actions-split {
+    justify-content: space-between;
+}
+
+.button-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.card-footer-right {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.toolbar-right {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.modal-box-wide {
+    max-width: 640px;
+}
+
+.help-content h4 {
+    font-size: 14px;
+    margin: 20px 0 8px;
+}
+
+.help-content h4:first-child {
+    margin-top: 0;
+}
+
+.help-content p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--color-text);
+    margin: 0 0 12px;
+}
+
+.help-content ul {
+    margin: 0 0 12px;
+    padding-left: 20px;
+}
+
+.help-content li {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 6px;
+}
+
+.help-content strong {
+    font-weight: 600;
+}
+
+.is-hidden {
+    display: none;
+}
+
+/* src/assets/style.css */
 /*
  * DODATAK uz postojeći style.css - nalepiti na kraj fajla, isti
  * princip kao dopune u db/init.sql (ne prepisuje se ceo fajl da se ne
