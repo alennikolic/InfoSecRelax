@@ -10,14 +10,19 @@
  *
  * Svaka stavka:
  *   slug     - jedinstven identifikator; koristi se u URL-u (?page=slug)
- *              i kao naziv fajla stranice (modules/{slug}.php)
+ *              i kao naziv fajla stranice (modules/{slug}.php), I kao
+ *              page_slug u role_page_permissions (videti config/auth.php)
  *   title    - naziv prikazan u meniju i u naslovu stranice
- *   iso_ref  - referenca na klauzulu ili kontrolu standarda
+ *   iso_ref  - referenca na klauzulu ili kontrolu standarda (null za
+ *              stranice van standarda - Alati grupa)
  *   group    - naziv sekcije menija za grupisanje srodnih stavki
  *
  * Dodavanje nove stavke u meni = dodavanje jednog reda ovde. Ruter u
- * index.php i layout u includes/header.php automatski je prikazuju,
- * bez potrebe za izmenom bilo čega drugog.
+ * index.php i layout u includes/header.php automatski je prikazuju.
+ * RBAC (ensureAdministratorRole u config/auth.php) automatski dodeljuje
+ * 'puno' pravo na novu stavku Administrator roli svake organizacije
+ * pri sledećem pozivu - ostale role ostaju na 'zabranjeno' dok ih neko
+ * svesno ne izmeni na ?page=role-pristup.
  *
  * Izuzeci od "redosled prati standard":
  *   - "zaposleni" nije vezan za jednu klauzulu, nego je osnovni skup
@@ -31,6 +36,15 @@
  *     (Poglavlje 5) - obrnuto od brojeva klauzula. Ovo je svesna odluka
  *     korisnika aplikacije, ne greška - ako se ikad vrati na strogi
  *     redosled standarda, samo zameniti mesta ova dva bloka.
+ *
+ * NAPOMENA (RBAC): "prijava", "odjava", "organizacije" i
+ * "pomoc-uredjivanje" NAMERNO NISU ovde - to su rute van organizacionog
+ * RBAC-a. "pomoc-uredjivanje" je premešteno u super-admin granu jer
+ * uređuje help_content tabelu koja NIJE multi-tenant (jedan red po
+ * page_slug, deljen kroz CELU aplikaciju) - da je ostalo ovde, admin
+ * bilo koje organizacije bi mogao da menja tekst pomoći koji vide sve
+ * ostale firme. index.php ih rutira posebno, pre nego što uopšte
+ * pogleda ovaj niz. Videti config/auth.php i index.php.
  */
 
 return [
@@ -67,8 +81,8 @@ return [
     ['slug' => 'dobavljaci',               'title' => 'Dobavljači',                 'iso_ref' => 'A.5.19-5.23',               'group' => 'Operacija'],
     ['slug' => 'fizicka-bezbednost',       'title' => 'Fizička bezbednost',         'iso_ref' => 'A.7',                       'group' => 'Operacija'],
     ['slug' => 'incidenti',                'title' => 'Upravljanje incidentima',    'iso_ref' => 'A.5.24-5.28',               'group' => 'Operacija'],
-    ['slug' => 'kontinuitet-poslovanja',    'title' => 'Kontinuitet poslovanja',     'iso_ref' => 'A.5.29-5.30',               'group' => 'Operacija'],
-    ['slug' => 'uskladjenost',              'title' => 'Usklađenost',                'iso_ref' => 'A.5.31-5.36',               'group' => 'Operacija'],
+    ['slug' => 'kontinuitet-poslovanja',   'title' => 'Kontinuitet poslovanja',     'iso_ref' => 'A.5.29-5.30',               'group' => 'Operacija'],
+    ['slug' => 'uskladjenost',             'title' => 'Usklađenost',                'iso_ref' => 'A.5.31-5.36',               'group' => 'Operacija'],
 
     // --- Ocenjivanje učinka (Poglavlje 9) ---
     ['slug' => 'pokazatelji',              'title' => 'Pokazatelji i merenje',      'iso_ref' => 'Klauzula 9.1',              'group' => 'Ocenjivanje učinka'],
@@ -80,6 +94,7 @@ return [
     ['slug' => 'korektivne-mere',          'title' => 'Korektivne mere',            'iso_ref' => 'Klauzula 10.2',             'group' => 'Unapređenje'],
 
     // --- Alati (van standarda - administrativne funkcije aplikacije) ---
-    ['slug' => 'pomoc-uredjivanje',        'title' => 'Uređivanje pomoći',          'iso_ref' => null,                        'group' => 'Alati'],
+    ['slug' => 'korisnici',                'title' => 'Korisnici',                  'iso_ref' => null,                        'group' => 'Alati'],
+    ['slug' => 'role-pristup',             'title' => 'Role i prava pristupa',      'iso_ref' => null,                        'group' => 'Alati'],
 
 ];

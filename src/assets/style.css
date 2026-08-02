@@ -793,3 +793,134 @@ body {
 .is-hidden {
     display: none;
 }
+
+/* src/assets/style.css */
+/*
+ * DODATAK uz postojeći style.css - nalepiti na kraj fajla, isti
+ * princip kao dopune u db/init.sql (ne prepisuje se ceo fajl da se ne
+ * izgube postojeća pravila koja nisu deo ove izmene).
+ *
+ * Nove klase koje uvode prijava.php, organizacije.php, korisnici.php i
+ * role-pristup.php:
+ */
+
+.sidebar-user {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sidebar-user-email {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-user-logout {
+    flex-shrink: 0;
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+.sidebar-user-logout:hover {
+    opacity: 1;
+}
+
+.auth-form-wrap {
+    max-width: 360px;
+    margin: 4rem auto;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.stacked-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 480px;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.permission-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.permission-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.permission-table-page {
+    white-space: nowrap;
+}
+
+.permission-table-option label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+}
+
+/* src/assets/style.css */
+/*
+ * DODATAK - nalepiti na kraj postojećeg style.css (posle prethodne
+ * RBAC dopune - style-rbac-addition.css). Stilizuje .demo-hint okvir
+ * dodat u modules/prijava.php - email i lozinka svaki u svom redu, sa
+ * dugmetom za kopiranje pored svakog.
+ */
+
+.demo-hint {
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px dashed rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+}
+
+.demo-hint p {
+    margin: 0.25rem 0;
+}
+
+.demo-hint-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.demo-hint code {
+    background: rgba(0, 0, 0, 0.08);
+    border-radius: 3px;
+    padding: 0.1rem 0.35rem;
+    font-size: 0.85em;
+}
+
+.demo-hint-copy {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.55rem;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+}
+
+.demo-hint-copy:hover {
+    background: rgba(0, 0, 0, 0.06);
+}

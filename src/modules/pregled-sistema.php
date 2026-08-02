@@ -13,32 +13,27 @@
  * da duplira spisak stavki ovde - ako se meni izmeni (nova stavka,
  * novi redosled), ova stranica automatski prati promenu.
  *
- * Read-only kao i unapredjenje.php - bez formi, bez upisa u bazu.
+ * Read-only - bez formi, bez upisa u bazu.
+ *
+ * IZMENA (RBAC/multi-tenant): dugme "Uvezi demo podatke" (i poziv na
+ * includes/demo-import.php) je UKLONJENO odavde. db/demo-data.sql radi
+ * TRUNCATE na desetine tabela BEZ filtera po organizaciji - u
+ * multi-tenant okruženju bi klik iz bilo koje organizacije obrisao
+ * podatke SVIH organizacija na instalaciji. Isti demo skup se sada
+ * unosi AUTOMATSKI i JEDNOM, isključivo za organization_id = 1, kao
+ * deo db/init.sql (pri svakoj svežoj instalaciji) - videti komentar
+ * na vrhu db/demo-data.sql i dogovor iz razgovora o ovoj izmeni.
+ * includes/demo-import.php ostaje u projektu neiskorišćen (može se
+ * obrisati kasnije) - namerno nije brisan ovom izmenom, da se ne diraju
+ * fajlovi van onoga što je zatraženo.
  */
 
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
-require __DIR__ . '/../includes/demo-import.php';
 
 $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
-
-$demoImportError = null;
-
-// --- Uvoz demo podataka (briše sve postojeće podatke i zamenjuje ih
-// demo skupom za knjigovodstvenu agenciju) - videti includes/demo-import.php
-// i db/demo-data.sql. Ovde se hvata Throwable, ne samo PDOException, jer
-// helper baca i RuntimeException ako fajl nije montiran u kontejner.
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'import_demo_data') {
-    try {
-        importDemoData();
-        header('Location: ?page=pregled-sistema&demo_imported=1');
-        exit;
-    } catch (Throwable $e) {
-        $demoImportError = $e->getMessage();
-    }
-}
 
 // --- Broj unosa po modulu - jedan upit po tabeli, mapiran na slug iz menija ---
 $countQueries = [
@@ -145,38 +140,6 @@ foreach ($menu as $item) {
         <span class="stat-value"><?= $soaTotal > 0 ? $soaFilled . '/' . $soaTotal : '—' ?></span>
         <span class="stat-label">SoA kontrola obrazloženo</span>
     </div>
-</div>
-
-<?php if (isset($_GET['demo_imported'])): ?>
-<div class="alert alert-success">
-    <p>Demo podaci su uspešno uvezeni.</p>
-</div>
-<?php endif; ?>
-
-<?php if ($demoImportError !== null): ?>
-<div class="alert alert-error">
-    <p>Uvoz demo podataka nije uspeo: <?= htmlspecialchars($demoImportError) ?></p>
-</div>
-<?php endif; ?>
-
-<div class="factor-card">
-    <div class="card-header-row">
-        <span class="card-title">Demo podaci</span>
-    </div>
-    <p>
-        Popuni bazu realnim demo podacima za knjigovodstvenu agenciju "Bilans
-        Plus" - kompletan primer kroz sve module, za potrebe prezentacije ili
-        obuke.
-    </p>
-    <p class="item-meta">
-        Upozorenje: ovo BRIŠE sve postojeće podatke i zamenjuje ih demo skupom.
-        Radnja se ne može opozvati.
-    </p>
-    <form method="post"
-        onsubmit="return confirm('Ovo BRIŠE sve postojeće podatke i zamenjuje ih demo skupom za knjigovodstvenu agenciju. Radnja se ne može opozvati. Nastaviti?');">
-        <input type="hidden" name="action" value="import_demo_data">
-        <button type="submit" class="btn-danger">Uvezi demo podatke</button>
-    </form>
 </div>
 
 <?php foreach ($groupedMenu as $groupName => $items): ?>
