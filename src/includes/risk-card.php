@@ -150,7 +150,7 @@ $treatmentOptionLabels = [
     <button type="button" class="btn-secondary"
         onclick='openTreatmentModal(<?= (int) $risk['id'] ?>, <?= json_encode($risk['title'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Dodaj meru</button>
 
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj rizik i sve njegove mere tretmana?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj rizik i sve njegove mere tretmana?');">
         <input type="hidden" name="action" value="delete_risk">
         <input type="hidden" name="id" value="<?= (int) $risk['id'] ?>">
         <button type="submit" class="btn-delete">Obriši rizik</button>
