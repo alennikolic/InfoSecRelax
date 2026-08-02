@@ -1051,6 +1051,20 @@ INSERT IGNORE INTO help_content (page_slug, title, body) VALUES
 <p>Nije dovoljno reći "X nije uključeno" - mora se objasniti zašto (npr. "van kontrole firme", "ne obrađuje podatke klijenata").</p>
 <h4>Verzionisanje</h4>
 <p>Nova verzija ne briše staru - stara ostaje u istoriji sa svojim tadašnjim izuzecima, tačno kakva je bila važeća u tom trenutku. To je sam trag audita kroz vreme.</p>'),
+(
+    'obim',
+    'Pomoć — Obim ISMS-a',
+    '<p>Klauzula 4.3 traži da se, na osnovu konteksta (4.1) i zahteva zainteresovanih strana (4.2), odredi tačan obim ISMS-a - koji delovi organizacije, lokacije i sistemi su unutar njega, a koji su izričito isključeni i zašto.</p>
+ 
+<h4>Sve ide u sam tekst obima</h4>
+<p>Ne postoje posebna polja za izuzetke ili zavisnosti od trećih strana - sve to piše se direktno u tekstu obima, prirodnim jezikom. Na primer: "ISMS obuhvata sve informacione sisteme i osoblje u kancelariji u Beogradu. Van obima je ogranak u Novom Sadu, jer ne obrađuje podatke klijenata. Hosting produkcionih servera je kod eksternog cloud dobavljača, uređeno ugovorom o nivou usluge."</p>
+ 
+<h4>Izuzeci moraju imati obrazloženje</h4>
+<p>Nije dovoljno reći "X nije uključeno" - u istoj rečenici objasni i zašto (npr. "jer ne obrađuje podatke klijenata", "van kontrole firme").</p>
+ 
+<h4>Verzionisanje</h4>
+<p>Svaka nova verzija se čuva kao poseban zapis - stara ne nestaje, ostaje u istoriji ispod, tačno onakva kakva je bila važeća u tom trenutku. To je sam trag audita kroz vreme.</p>'
+),
 ('liderstvo', 'Pomoć — Liderstvo i posvećenost',
 '<p>Klauzula 5.1 traži da top menadžment demonstrira liderstvo i posvećenost ISMS-u. Ova stranica nema svoju tabelu - sažima dokaze te posvećenosti iz drugih delova aplikacije.</p>
 <h4>Šta pokazuju brojke</h4>
