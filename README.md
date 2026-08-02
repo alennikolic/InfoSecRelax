@@ -43,6 +43,8 @@ Poznata ograničenja, namerno ostavljena za kasnije:
 
 ```bash
 docker compose up -d --build
+Email	superadmin@infosecrelax.local
+Lozinka	AiSSPhTjXRFZox6eXZfH
 ```
 
 Aplikacija je dostupna na `http://localhost:8090`, MySQL na portu `3307`
