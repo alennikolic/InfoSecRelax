@@ -67,37 +67,8 @@ Kredencijali (razvojno okruženje, videti `docker-compose.yml`):
 | Korisnik | `infosecrelax_user` |
 | Lozinka | `infosecrelax_password` |
 
-### Migracije (važno za svežu instalaciju)
-
-`db/init.sql` se pokreće automatski samo na **svežoj** instalaciji (prazan
-Docker volume) i sadrži šemu onakvu kakva je bila u trenutku poslednjeg
-ažuriranja tog fajla. Sedam migracija u `db/migrations/` je nastalo posle
-toga i **nije još utopljeno u `init.sql`**:
-
-| Fajl | Šta dodaje |
-|---|---|
-| `001_add_isms_resources.sql` | tabela `isms_resources` (Klauzula 7.1) |
-| `002_add_continuity_plans.sql` | tabela `continuity_plans` (A.5.29-5.30) |
-| `003_add_compliance_items.sql` | tabela `compliance_items` (A.5.31-5.36) |
-| `004_add_help_content.sql` | tabela `help_content` + početni sadržaj za kontekst.php |
-| `005_add_help_zainteresovane_strane.sql` | sadržaj pomoći za jednu stranicu |
-| `006_add_help_remaining_pages.sql` | sadržaj pomoći za 26 preostalih stranica |
-| `007_update_help_obim.sql` | ispravka teksta pomoći za obim.php |
-
-Na **postojećoj** bazi, primeni ih redom:
-
-```bash
-for f in db/migrations/0*.sql; do
-  docker exec -i InfoSecRelax_db mysql -u infosecrelax_user -pinfosecrelax_password infosecrelax < "$f"
-done
-```
-
-Na **svežoj** instalaciji, prekopiraj sadržaj svih sedam fajlova (CREATE
-TABLE i INSERT blokove) na kraj `db/init.sql` pre prvog pokretanja, da se ne
-mora ručno primenjivati svaki put — ovo još nije urađeno.
-
 Demo podaci (`db/demo-data.sql`) učitavaju se preko dugmeta na
-`?page=pregled-sistema` i nezavisni su od migracija.
+`?page=pregled-sistema`.
 
 ## Struktura projekta
 
@@ -106,8 +77,7 @@ InfoSecRelax/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── db/
-│   ├── init.sql                    (šema + seed - pokreće se samo na SVEŽOJ instalaciji, videti napomenu o migracijama)
-│   ├── migrations/                 (sedam migracija, videti tabelu iznad)
+│   ├── init.sql                    (kompletna šema + seed podaci - pokreće se samo na SVEŽOJ instalaciji)
 │   └── demo-data.sql               (demo podaci, učitavaju se preko dugmeta na pregled-sistema)
 └── src/
     ├── index.php                     (jedina ulazna tačka / ruter)
@@ -208,13 +178,10 @@ Redosled grupa "Rizik i planiranje" pre "Liderstvo" je namerna odluka
 
 Predlog redosleda, po prioritetu:
 
-1. **Utopiti sedam migracija u `db/init.sql`** — trenutno svaka sveža
-   instalacija zahteva ručno pokretanje migracija posle prvog dizanja
-   kontejnera, lako se zaboravi.
-2. **`?page=izjava-primenljivosti`** — jedina stranica koja nije prošla kroz
+1. **`?page=izjava-primenljivosti`** — jedina stranica koja nije prošla kroz
    noviji obrazac (toolbar, modal, Pomoć dugme).
-3. **CSRF zaštita** na formama.
-4. **Autentifikacija i registracija firmi** — kad se doda, `organization_id`
+2. **CSRF zaštita** na formama.
+3. **Autentifikacija i registracija firmi** — kad se doda, `organization_id`
    prestaje da bude uvek `1` (videti napomenu u `database.php`).
-5. Opciono: prebaciti preostala ugrađena ugnježdena dodavanja (prisustvo na
+4. Opciono: prebaciti preostala ugrađena ugnježdena dodavanja (prisustvo na
    obuci i sl.) na isti modal obrazac, radi potpune doslednosti.
