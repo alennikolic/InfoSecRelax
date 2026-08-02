@@ -12,26 +12,34 @@
  * 1) risk_criteria je jedan red po organizaciji (podešavanje, ne
  *    lista) - postoji ensureCurrentRiskCriteria() ispod, analogno
  *    ensureDefaultOrganization() iz database.php, samo ovde lokalno
- *    jer je specifično za ovaj modul.
+ *    jer je specifično za ovaj modul. Trenutne vrednosti su uvek
+ *    vidljive na vrhu stranice (sažetak), a sama forma za izmenu je u
+ *    posebnom modalu ("Kriterijumi procene" dugme) - isti princip kao
+ *    trenutna verzija obima na ?page=obim.
  *
  * 2) risk_level NIJE generisana kolona (za razliku od risk_score) -
  *    aplikacija ga računa iz risk_score i risk_criteria pragova
  *    (calculateRiskLevel ispod). Kad se kriterijumi promene, SVI
  *    postojeći rizici se odmah preračunaju (jedan UPDATE), da
  *    risk_level nikad ne ostane zastareo u odnosu na trenutne pragove.
+ *    Isto tako, kad se rizik uredi (nova verovatnoća/uticaj), njegov
+ *    risk_level se preračunava odmah pri čuvanju.
  *
  * Ograničenje koje je svesno ostavljeno: ako se likelihood_scale_max
  * ili impact_scale_max naknadno smanje ispod već unetih vrednosti
  * likelihood/impact na postojećim rizicima, ti redovi se ne
  * validiraju niti ispravljaju retroaktivno.
  *
- * Status mere tretmana ovde ima samo jednu radnju ("Označi kao
- * sprovedeno") - "u_toku" i "ponovo_otvoreno" nisu dostupni kroz UI.
+ * "Uredi" rizika NE menja status/poslednji pregled - to ostaje
+ * isključivo kroz "Ažuriraj status" u kartici, koje i dalje ima samo
+ * jednu radnju na meri tretmana ("Označi kao sprovedeno") - "u_toku" i
+ * "ponovo_otvoreno" nisu dostupni kroz UI.
  */
 
 declare(strict_types=1);
 
 require __DIR__ . '/../config/database.php';
+require __DIR__ . '/../includes/help-content.php';
 
 /**
  * Osigurava da za organizaciju postoji tačno jedan red u risk_criteria
@@ -68,7 +76,11 @@ $pdo = getDbConnection();
 $organizationId = ensureDefaultOrganization($pdo);
 $riskCriteria = ensureCurrentRiskCriteria($pdo, $organizationId);
 
+$pageSlug = 'procena-rizika';
+
 $errors = [];
+
+$validReviewTriggers = ['godisnji_ciklus', 'incident', 'promena', 'ostalo'];
 
 // --- Čuvanje kriterijuma procene (Korak 1) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_criteria') {
@@ -138,8 +150,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_r
     $identifiedAt             = trim($_POST['identified_at'] ?? '');
     $reviewTrigger            = $_POST['review_trigger'] ?? 'godisnji_ciklus';
 
-    $validReviewTriggers = ['godisnji_ciklus', 'incident', 'promena', 'ostalo'];
-
     if ($title === '') {
         $errors[] = 'Naziv rizika je obavezan.';
     }
@@ -198,6 +208,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'add_r
             'risk_level'                => $riskLevel,
             'identified_at'             => $identifiedAt,
             'review_trigger'            => $reviewTrigger,
+        ]);
+
+        header('Location: ?page=procena-rizika');
+        exit;
+    }
+}
+
+// --- Ažuriranje postojećeg rizika ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_risk') {
+    $id                       = (int) ($_POST['id'] ?? 0);
+    $title                    = trim($_POST['title'] ?? '');
+    $threatDescription        = trim($_POST['threat_description'] ?? '');
+    $vulnerabilityDescription = trim($_POST['vulnerability_description'] ?? '');
+    $likelihood               = (int) ($_POST['likelihood'] ?? 0);
+    $impact                   = (int) ($_POST['impact'] ?? 0);
+    $assetId                  = trim($_POST['asset_id'] ?? '');
+    $identifiedAt             = trim($_POST['identified_at'] ?? '');
+    $reviewTrigger            = $_POST['review_trigger'] ?? 'godisnji_ciklus';
+
+    if ($title === '') {
+        $errors[] = 'Naziv rizika je obavezan.';
+    }
+    if ($threatDescription === '') {
+        $errors[] = 'Opis pretnje je obavezan.';
+    }
+    if ($vulnerabilityDescription === '') {
+        $errors[] = 'Opis ranjivosti je obavezan.';
+    }
+    if ($likelihood < 1 || $likelihood > (int) $riskCriteria['likelihood_scale_max']) {
+        $errors[] = 'Verovatnoća mora biti između 1 i ' . (int) $riskCriteria['likelihood_scale_max'] . '.';
+    }
+    if ($impact < 1 || $impact > (int) $riskCriteria['impact_scale_max']) {
+        $errors[] = 'Uticaj mora biti između 1 i ' . (int) $riskCriteria['impact_scale_max'] . '.';
+    }
+    if ($identifiedAt === '') {
+        $errors[] = 'Datum identifikacije je obavezan.';
+    }
+    if (!in_array($reviewTrigger, $validReviewTriggers, true)) {
+        $errors[] = 'Izaberite razlog pregleda.';
+    }
+
+    $assetIdValue = null;
+    if ($assetId !== '') {
+        $assetIdValue = (int) $assetId;
+        $assetCheck = $pdo->prepare('SELECT id FROM assets WHERE id = :id AND organization_id = :org_id');
+        $assetCheck->execute(['id' => $assetIdValue, 'org_id' => $organizationId]);
+
+        if ($assetCheck->fetchColumn() === false) {
+            $errors[] = 'Izabrano sredstvo nije pronađeno.';
+            $assetIdValue = null;
+        }
+    }
+
+    if (empty($errors)) {
+        $riskScore = $likelihood * $impact;
+        $riskLevel = calculateRiskLevel($riskScore, $riskCriteria);
+
+        $stmt = $pdo->prepare(
+            'UPDATE risks
+             SET asset_id = :asset_id, title = :title, threat_description = :threat_description,
+                 vulnerability_description = :vulnerability_description, likelihood = :likelihood,
+                 impact = :impact, risk_level = :risk_level, identified_at = :identified_at,
+                 review_trigger = :review_trigger
+             WHERE id = :id AND organization_id = :org_id'
+        );
+        $stmt->execute([
+            'asset_id'                  => $assetIdValue,
+            'title'                     => $title,
+            'threat_description'        => $threatDescription,
+            'vulnerability_description' => $vulnerabilityDescription,
+            'likelihood'                => $likelihood,
+            'impact'                    => $impact,
+            'risk_level'                => $riskLevel,
+            'identified_at'             => $identifiedAt,
+            'review_trigger'            => $reviewTrigger,
+            'id'                        => $id,
+            'org_id'                    => $organizationId,
         ]);
 
         header('Location: ?page=procena-rizika');
@@ -356,13 +443,10 @@ $treatmentsByRisk = [];
 foreach ($treatmentsStmt->fetchAll() as $treatment) {
     $treatmentsByRisk[$treatment['risk_id']][] = $treatment;
 }
-?>
 
-<p class="module-intro">
-    Klauzula 6.1.2 traži metodologiju procene rizika, a 6.1.3 tretman za svaki
-    identifikovani rizik - obe su ovde kombinovane: prvo se podešavaju
-    kriterijumi (Korak 1), zatim se vode rizici i njihove mere tretmana.
-</p>
+// --- Učitavanje sadržaja pomoći za ovu stranicu ---
+$helpContent = getHelpContent($pdo, $pageSlug);
+?>
 
 <?php if (!empty($errors)): ?>
 <div class="alert alert-error">
@@ -372,120 +456,29 @@ foreach ($treatmentsStmt->fetchAll() as $treatment) {
 </div>
 <?php endif; ?>
 
+<div class="toolbar">
+    <div class="button-group">
+        <button type="button" class="btn-primary" onclick="openAddRiskModal()">+ Dodaj rizik</button>
+        <button type="button" class="btn-secondary" onclick="openCriteriaModal()">Kriterijumi procene</button>
+    </div>
+    <button type="button" class="btn-secondary" onclick="openHelpModal()">Pomoć</button>
+</div>
+
 <div class="scope-current">
     <div class="card-header-row">
         <span class="card-title">Kriterijumi procene rizika</span>
     </div>
     <p class="item-meta">
-        Rizik = verovatnoća × uticaj. Ovi pragovi određuju kada je rizik nizak,
-        srednji ili visok - promena ovde odmah preračunava sve već unete rizike.
+        Verovatnoća 1-<?= (int) $riskCriteria['likelihood_scale_max'] ?>
+        × Uticaj 1-<?= (int) $riskCriteria['impact_scale_max'] ?>
+        · Nizak do <?= (int) $riskCriteria['low_threshold_max'] ?>
+        · Srednji do <?= (int) $riskCriteria['medium_threshold_max'] ?>
+        · iznad toga Visok
     </p>
-
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="update_criteria">
-
-        <div class="form-row">
-            <label for="likelihood_scale_max">Najveća vrednost skale verovatnoće (npr. 5 za skalu 1-5)</label>
-            <input type="number" name="likelihood_scale_max" id="likelihood_scale_max" min="1" max="20"
-                value="<?= (int) $riskCriteria['likelihood_scale_max'] ?>" required>
-        </div>
-
-        <div class="form-row">
-            <label for="impact_scale_max">Najveća vrednost skale uticaja (npr. 5 za skalu 1-5)</label>
-            <input type="number" name="impact_scale_max" id="impact_scale_max" min="1" max="20"
-                value="<?= (int) $riskCriteria['impact_scale_max'] ?>" required>
-        </div>
-
-        <div class="form-row">
-            <label for="low_threshold_max">Nizak rizik: proizvod do ove vrednosti</label>
-            <input type="number" name="low_threshold_max" id="low_threshold_max" min="1"
-                value="<?= (int) $riskCriteria['low_threshold_max'] ?>" required>
-        </div>
-
-        <div class="form-row">
-            <label for="medium_threshold_max">Srednji rizik: proizvod do ove vrednosti (iznad je visok)</label>
-            <input type="number" name="medium_threshold_max" id="medium_threshold_max" min="1"
-                value="<?= (int) $riskCriteria['medium_threshold_max'] ?>" required>
-        </div>
-
-        <div class="form-row">
-            <label for="notes">Napomena (opciono)</label>
-            <textarea name="notes" id="notes" rows="2"><?= htmlspecialchars($riskCriteria['notes'] ?? '') ?></textarea>
-        </div>
-
-        <button type="submit" class="btn-secondary">Sačuvaj kriterijume</button>
-    </form>
+    <?php if (!empty($riskCriteria['notes'])): ?>
+        <p class="item-meta"><?= nl2br(htmlspecialchars($riskCriteria['notes'])) ?></p>
+    <?php endif; ?>
 </div>
-
-<form method="post" class="factor-form">
-    <input type="hidden" name="action" value="add_risk">
-
-    <div class="form-row">
-        <label for="title">Naziv rizika</label>
-        <input type="text" name="title" id="title" required
-            placeholder="npr. Gubitak pristupa nalogu za e-mail hosting">
-    </div>
-
-    <div class="form-row">
-        <label for="threat_description">Pretnja</label>
-        <textarea name="threat_description" id="threat_description" rows="2" required
-            placeholder="npr. Napadač dobija pristup nalogu putem phishing napada."></textarea>
-    </div>
-
-    <div class="form-row">
-        <label for="vulnerability_description">Ranjivost</label>
-        <textarea name="vulnerability_description" id="vulnerability_description" rows="2" required
-            placeholder="npr. Nalog nema uključenu dvofaktorsku autentifikaciju."></textarea>
-    </div>
-
-    <div class="form-row">
-        <label for="asset_id">Povezano sredstvo (opciono)</label>
-        <select name="asset_id" id="asset_id">
-            <option value="">Nije povezano</option>
-            <?php foreach ($assetOptions as $option): ?>
-                <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['name']) ?></option>
-            <?php endforeach; ?>
-        </select>
-        <?php if (empty($assetOptions)): ?>
-            <p class="item-meta">Nema unetih sredstava - prvo ih dodaj na stranici "Popis sredstava".</p>
-        <?php endif; ?>
-    </div>
-
-    <div class="form-row">
-        <label for="likelihood">Verovatnoća (1-<?= (int) $riskCriteria['likelihood_scale_max'] ?>)</label>
-        <select name="likelihood" id="likelihood" required>
-            <?php for ($i = 1; $i <= (int) $riskCriteria['likelihood_scale_max']; $i++): ?>
-                <option value="<?= $i ?>"><?= $i ?></option>
-            <?php endfor; ?>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="impact">Uticaj (1-<?= (int) $riskCriteria['impact_scale_max'] ?>)</label>
-        <select name="impact" id="impact" required>
-            <?php for ($i = 1; $i <= (int) $riskCriteria['impact_scale_max']; $i++): ?>
-                <option value="<?= $i ?>"><?= $i ?></option>
-            <?php endfor; ?>
-        </select>
-    </div>
-
-    <div class="form-row">
-        <label for="identified_at">Datum identifikacije</label>
-        <input type="date" name="identified_at" id="identified_at" required value="<?= date('Y-m-d') ?>">
-    </div>
-
-    <div class="form-row">
-        <label for="review_trigger">Razlog pregleda</label>
-        <select name="review_trigger" id="review_trigger">
-            <option value="godisnji_ciklus" selected>Godišnji ciklus</option>
-            <option value="incident">Incident</option>
-            <option value="promena">Promena</option>
-            <option value="ostalo">Ostalo</option>
-        </select>
-    </div>
-
-    <button type="submit" class="btn-primary">Dodaj rizik</button>
-</form>
 
 <?php if (empty($allRisks)): ?>
     <p class="empty-state">Još uvek nema unetih rizika.</p>
@@ -495,3 +488,207 @@ foreach ($treatmentsStmt->fetchAll() as $treatment) {
         <?php include __DIR__ . '/../includes/risk-card.php'; ?>
     <?php endforeach; ?>
 <?php endif; ?>
+
+<div class="modal-overlay" id="risk-modal-overlay" onclick="closeRiskModal()">
+    <div class="modal-box modal-box-wide" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="risk-modal-title">Dodaj rizik</span>
+            <button type="button" class="modal-close" onclick="closeRiskModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post" id="risk-modal-form">
+            <input type="hidden" name="action" id="risk-modal-action" value="add_risk">
+            <input type="hidden" name="id" id="risk-modal-id" value="">
+
+            <div class="form-row">
+                <label for="modal_title">Naziv rizika</label>
+                <input type="text" name="title" id="modal_title" required
+                    placeholder="npr. Gubitak pristupa nalogu za e-mail hosting">
+            </div>
+
+            <div class="form-row">
+                <label for="modal_threat_description">Pretnja</label>
+                <textarea name="threat_description" id="modal_threat_description" rows="2" required
+                    placeholder="npr. Napadač dobija pristup nalogu putem phishing napada."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_vulnerability_description">Ranjivost</label>
+                <textarea name="vulnerability_description" id="modal_vulnerability_description" rows="2" required
+                    placeholder="npr. Nalog nema uključenu dvofaktorsku autentifikaciju."></textarea>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_asset_id">Povezano sredstvo (opciono)</label>
+                <select name="asset_id" id="modal_asset_id">
+                    <option value="">Nije povezano</option>
+                    <?php foreach ($assetOptions as $option): ?>
+                        <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['name']) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (empty($assetOptions)): ?>
+                    <p class="item-meta">Nema unetih sredstava - prvo ih dodaj na stranici "Popis sredstava".</p>
+                <?php endif; ?>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_likelihood">Verovatnoća (1-<?= (int) $riskCriteria['likelihood_scale_max'] ?>)</label>
+                <select name="likelihood" id="modal_likelihood" required>
+                    <?php for ($i = 1; $i <= (int) $riskCriteria['likelihood_scale_max']; $i++): ?>
+                        <option value="<?= $i ?>"><?= $i ?></option>
+                    <?php endfor; ?>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_impact">Uticaj (1-<?= (int) $riskCriteria['impact_scale_max'] ?>)</label>
+                <select name="impact" id="modal_impact" required>
+                    <?php for ($i = 1; $i <= (int) $riskCriteria['impact_scale_max']; $i++): ?>
+                        <option value="<?= $i ?>"><?= $i ?></option>
+                    <?php endfor; ?>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_identified_at">Datum identifikacije</label>
+                <input type="date" name="identified_at" id="modal_identified_at" required>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_review_trigger">Razlog pregleda</label>
+                <select name="review_trigger" id="modal_review_trigger">
+                    <option value="godisnji_ciklus">Godišnji ciklus</option>
+                    <option value="incident">Incident</option>
+                    <option value="promena">Promena</option>
+                    <option value="ostalo">Ostalo</option>
+                </select>
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromRiskModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeRiskModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="criteria-modal-overlay" onclick="closeCriteriaModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title">Kriterijumi procene rizika</span>
+            <button type="button" class="modal-close" onclick="closeCriteriaModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <p class="item-meta">
+            Rizik = verovatnoća × uticaj. Ovi pragovi određuju kada je rizik nizak,
+            srednji ili visok - promena ovde odmah preračunava sve već unete rizike.
+        </p>
+
+        <form method="post">
+            <input type="hidden" name="action" value="update_criteria">
+
+            <div class="form-row">
+                <label for="likelihood_scale_max">Najveća vrednost skale verovatnoće (npr. 5 za skalu 1-5)</label>
+                <input type="number" name="likelihood_scale_max" id="likelihood_scale_max" min="1" max="20"
+                    value="<?= (int) $riskCriteria['likelihood_scale_max'] ?>" required>
+            </div>
+
+            <div class="form-row">
+                <label for="impact_scale_max">Najveća vrednost skale uticaja (npr. 5 za skalu 1-5)</label>
+                <input type="number" name="impact_scale_max" id="impact_scale_max" min="1" max="20"
+                    value="<?= (int) $riskCriteria['impact_scale_max'] ?>" required>
+            </div>
+
+            <div class="form-row">
+                <label for="low_threshold_max">Nizak rizik: proizvod do ove vrednosti</label>
+                <input type="number" name="low_threshold_max" id="low_threshold_max" min="1"
+                    value="<?= (int) $riskCriteria['low_threshold_max'] ?>" required>
+            </div>
+
+            <div class="form-row">
+                <label for="medium_threshold_max">Srednji rizik: proizvod do ove vrednosti (iznad je visok)</label>
+                <input type="number" name="medium_threshold_max" id="medium_threshold_max" min="1"
+                    value="<?= (int) $riskCriteria['medium_threshold_max'] ?>" required>
+            </div>
+
+            <div class="form-row">
+                <label for="criteria_notes">Napomena (opciono)</label>
+                <textarea name="notes" id="criteria_notes" rows="2"><?= htmlspecialchars($riskCriteria['notes'] ?? '') ?></textarea>
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromCriteriaModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeCriteriaModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj kriterijume</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php include __DIR__ . '/../includes/help-modal.php'; ?>
+
+<script>
+function openAddRiskModal() {
+    document.getElementById('risk-modal-title').textContent = 'Dodaj rizik';
+    document.getElementById('risk-modal-action').value = 'add_risk';
+    document.getElementById('risk-modal-id').value = '';
+    document.getElementById('modal_title').value = '';
+    document.getElementById('modal_threat_description').value = '';
+    document.getElementById('modal_vulnerability_description').value = '';
+    document.getElementById('modal_asset_id').value = '';
+    document.getElementById('modal_likelihood').value = '';
+    document.getElementById('modal_impact').value = '';
+    document.getElementById('modal_identified_at').value = '<?= date('Y-m-d') ?>';
+    document.getElementById('modal_review_trigger').value = 'godisnji_ciklus';
+    document.getElementById('risk-modal-overlay').classList.add('is-open');
+}
+
+function openEditRiskModal(risk) {
+    document.getElementById('risk-modal-title').textContent = 'Uredi rizik';
+    document.getElementById('risk-modal-action').value = 'update_risk';
+    document.getElementById('risk-modal-id').value = risk.id;
+    document.getElementById('modal_title').value = risk.title;
+    document.getElementById('modal_threat_description').value = risk.threat_description;
+    document.getElementById('modal_vulnerability_description').value = risk.vulnerability_description;
+    document.getElementById('modal_asset_id').value = risk.asset_id;
+    document.getElementById('modal_likelihood').value = risk.likelihood;
+    document.getElementById('modal_impact').value = risk.impact;
+    document.getElementById('modal_identified_at').value = risk.identified_at;
+    document.getElementById('modal_review_trigger').value = risk.review_trigger;
+    document.getElementById('risk-modal-overlay').classList.add('is-open');
+}
+
+function closeRiskModal() {
+    document.getElementById('risk-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromRiskModal() {
+    closeRiskModal();
+    openHelpModal();
+}
+
+function openCriteriaModal() {
+    document.getElementById('criteria-modal-overlay').classList.add('is-open');
+}
+
+function closeCriteriaModal() {
+    document.getElementById('criteria-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromCriteriaModal() {
+    closeCriteriaModal();
+    openHelpModal();
+}
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        closeRiskModal();
+        closeCriteriaModal();
+    }
+});
+</script>
