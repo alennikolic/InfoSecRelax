@@ -963,6 +963,101 @@ COMMENT='Sadrzaj pomoci po stranici - deljen za sve organizacije, uredjuje se kr
 -- help_content vec postoji (iz migracije 004).
 --
 
+-- db/init.sql
+--
+-- DOPUNA - nalepiti na kraj postojećeg db/init.sql, PRE komentara
+-- "-- Kraj šeme". Isti princip kao ranije dopune (npr. isms_resources):
+-- ne dira se postojeći CREATE TABLE users blok, samo se proširuje preko
+-- ALTER TABLE, ovde na kraju fajla - bezbedno i za sveže instalacije
+-- (init.sql se pokreće jednom) i za ručno puštanje na postojeću bazu.
+--
+-- Dodaje:
+--   - roles / role_page_permissions - custom role po organizaciji i
+--     RBAC po stranici (page_slug odgovara slug-u iz config/menu.php).
+--     Odsustvo reda u role_page_permissions = 'zabranjeno' (default-deny).
+--   - users.organization_id postaje NULL-abilno (super admin ga nema),
+--     users.role_id, users.is_super_admin.
+--   - Ugrađen super admin nalog (videti INSERT na dnu) - jedini način
+--     da se u aplikaciju uđe i kreira prva prava organizacija.
+--
+-- NAPOMENA O PONOVNOM POKRETANJU: CREATE TABLE IF NOT EXISTS blokovi su
+-- bezbedni za dvostruko puštanje. ALTER TABLE i završni INSERT NISU -
+-- ako se ovaj blok jednom primeni na postojeću bazu, drugo puštanje bi
+-- palo na "duplicate column" / duplikat email-a. Za svežu instalaciju
+-- (nov Docker volume) ovo se ionako pokreće tačno jednom.
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- =====================================================================
+-- Custom role po organizaciji
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS roles (
+    id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    organization_id BIGINT UNSIGNED NOT NULL,
+    name            VARCHAR(100) NOT NULL,
+    description     VARCHAR(255) NULL,
+    is_system       BOOLEAN NOT NULL DEFAULT FALSE COMMENT 'TRUE za "Administrator" rolu koju sistem sam kreira pri osnivanju organizacije - ne može se obrisati, uvek ima puno pravo na sve stranice',
+    created_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (organization_id) REFERENCES organizations(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_roles_org_name (organization_id, name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='RBAC role za pristup aplikaciji - ne mešati sa roles_responsibilities (ISO A.5.2).';
+
+-- =====================================================================
+-- Prava po stranici, po roli - default-deny
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS role_page_permissions (
+    id                BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    role_id           BIGINT UNSIGNED NOT NULL,
+    page_slug         VARCHAR(100) NOT NULL COMMENT 'odgovara slug-u iz config/menu.php',
+    permission_level  ENUM('zabranjeno','citanje','puno') NOT NULL DEFAULT 'zabranjeno',
+    created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE,
+    UNIQUE KEY uq_role_page (role_id, page_slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='citanje = vidi i pregleda, puno = sme i da dodaje/menja/briše. Bez reda za par (role_id, page_slug) = zabranjeno.';
+
+-- =====================================================================
+-- Izmene postojeće tabele users
+-- =====================================================================
+
+-- Super admin ne pripada nijednoj organizaciji.
+ALTER TABLE users
+    MODIFY COLUMN organization_id BIGINT UNSIGNED NULL;
+
+ALTER TABLE users
+    ADD COLUMN role_id BIGINT UNSIGNED NULL AFTER personnel_id,
+    ADD COLUMN is_super_admin BOOLEAN NOT NULL DEFAULT FALSE AFTER is_active;
+
+ALTER TABLE users
+    ADD CONSTRAINT fk_users_role FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE SET NULL;
+
+-- =====================================================================
+-- Ugrađen super admin nalog
+-- =====================================================================
+-- Email:    superadmin@infosecrelax.local
+-- Lozinka:  AiSSPhTjXRFZox6eXZfH      <-- PROMENITI POSLE PRVE PRIJAVE
+--
+-- Heš je bcrypt (format identičan PHP-ovom password_hash() /
+-- password_verify() - $2b$ i $2y$ prefiksi su međusobno kompatibilni
+-- pri proveri). Aplikacija trenutno nema formu za promenu lozinke -
+-- videti napomenu u odgovoru uz ovaj fajl.
+INSERT INTO users (organization_id, email, password_hash, is_active, is_super_admin)
+VALUES (
+    NULL,
+    'superadmin@infosecrelax.local',
+    '$2b$12$/Xk2WcIUuz2tnjJYclP6.uYFDyYKnMZ6J40um7e0XFj.NmBrQNJeK',
+    TRUE,
+    TRUE
+);
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+
+
+
 INSERT IGNORE INTO help_content (page_slug, title, body) VALUES
 (
     'kontekst',
