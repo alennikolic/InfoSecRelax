@@ -7,14 +7,17 @@
  * iz metric_measurements za taj pokazatelj, spojenih LEFT JOIN-om sa
  * personnel radi measured_by_name, sortiran najnovije prvo; može biti
  * prazan niz) već postavljeni pre uključivanja ovog fajla - deli scope
- * sa foreach petljom iz koje se poziva. Takođe očekuje
- * $activePersonnelOptions, postavljen jednom u pokazatelji.php pre
- * foreach petlje.
+ * sa foreach petljom iz koje se poziva.
+ *
+ * "+ Dodaj merenje" ne otvara više ugrađenu formu u kartici - otvara
+ * zajednički modal na nivou stranice (modules/pokazatelji.php).
  *
  * target_value i value dolaze iz DECIMAL(10,2) kolona - PDO ih vraća
  * kao stringove sa uvek tačno dve decimale (npr. "5.00"), pa se
  * suvišne nule uklanjaju preko rtrim() radi čitljivijeg prikaza
- * ("5" umesto "5.00", "12.5" umesto "12.50").
+ * ("5" umesto "5.00", "12.5" umesto "12.50") - isti $formatValue se
+ * koristi i za predpopunjavanje polja "Ciljna vrednost" u modalu za
+ * uređivanje.
  */
 
 $latestMeasurement = $measurements[0] ?? null;
@@ -27,9 +30,20 @@ $formatValue = static function (string $decimalString): string {
 <div class="factor-card">
     <div class="card-header-row">
         <span class="card-title"><?= htmlspecialchars($metric['name']) ?></span>
-        <?php if (!empty($metric['measurement_frequency'])): ?>
-            <span class="factor-category"><?= htmlspecialchars($metric['measurement_frequency']) ?></span>
-        <?php endif; ?>
+        <div class="button-group">
+            <?php if (!empty($metric['measurement_frequency'])): ?>
+                <span class="factor-category"><?= htmlspecialchars($metric['measurement_frequency']) ?></span>
+            <?php endif; ?>
+            <button type="button" class="btn-secondary"
+                onclick='openEditMetricModal(<?= json_encode([
+                    "id"                     => (int) $metric["id"],
+                    "name"                   => $metric["name"],
+                    "description"            => $metric["description"] ?? "",
+                    "unit"                   => $metric["unit"] ?? "",
+                    "target_value"           => $metric["target_value"] !== null ? $formatValue($metric["target_value"]) : "",
+                    "measurement_frequency"  => $metric["measurement_frequency"] ?? "",
+                ], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>Uredi</button>
+        </div>
     </div>
 
     <?php if (!empty($metric['description'])): ?>
@@ -78,39 +92,10 @@ $formatValue = static function (string $decimalString): string {
         </ul>
     <?php endif; ?>
 
-    <form method="post" class="subform">
-        <input type="hidden" name="action" value="add_measurement">
-        <input type="hidden" name="metric_id" value="<?= (int) $metric['id'] ?>">
+    <button type="button" class="btn-secondary"
+        onclick='openMeasurementModal(<?= (int) $metric['id'] ?>, <?= json_encode($metric['name'], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_TAG | JSON_HEX_AMP) ?>)'>+ Dodaj merenje</button>
 
-        <div class="form-row">
-            <label for="value_<?= (int) $metric['id'] ?>">Vrednost</label>
-            <input type="number" name="value" id="value_<?= (int) $metric['id'] ?>" step="0.01" required>
-        </div>
-
-        <div class="form-row">
-            <label for="measured_at_<?= (int) $metric['id'] ?>">Datum merenja</label>
-            <input type="date" name="measured_at" id="measured_at_<?= (int) $metric['id'] ?>" value="<?= date('Y-m-d') ?>">
-        </div>
-
-        <div class="form-row">
-            <label for="measured_by_<?= (int) $metric['id'] ?>">Izmerio (opciono)</label>
-            <select name="measured_by" id="measured_by_<?= (int) $metric['id'] ?>">
-                <option value="">Nije dodeljen</option>
-                <?php foreach ($activePersonnelOptions as $option): ?>
-                    <option value="<?= (int) $option['id'] ?>"><?= htmlspecialchars($option['full_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-row">
-            <label for="notes_<?= (int) $metric['id'] ?>">Napomena (opciono)</label>
-            <textarea name="notes" id="notes_<?= (int) $metric['id'] ?>" rows="2"></textarea>
-        </div>
-
-        <button type="submit" class="btn-secondary">Dodaj merenje</button>
-    </form>
-
-    <form method="post" class="factor-delete-form" onsubmit="return confirm('Obrisati ovaj pokazatelj i sva njegova merenja?');">
+    <form method="post" class="factor-delete-form card-footer-right" onsubmit="return confirm('Obrisati ovaj pokazatelj i sva njegova merenja?');">
         <input type="hidden" name="action" value="delete_metric">
         <input type="hidden" name="id" value="<?= (int) $metric['id'] ?>">
         <button type="submit" class="btn-delete">Obriši pokazatelj</button>
