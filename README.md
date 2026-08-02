@@ -90,7 +90,7 @@ nema javne "Registruj firmu" forme.
 | Nalog | Email | Lozinka |
 |---|---|---|
 | Super admin | `superadmin@infosecrelax.local` | `AiSSPhTjXRFZox6eXZfH` |
-| Demo (organizacija "Moja firma", rola Administrator) | `demo` | `demo` |
+| Demo (organizacija "Moja firma", rola Administrator) | `demo@demo.local` | `AiSSPhTjXRFZox6eXZfH` |
 
 **Obavezno promeniti/ukloniti oba naloga** ako instalacija ikad postane
 dostupna van lokalnog razvojnog okruženja — lozinke su namerno trivijalne
