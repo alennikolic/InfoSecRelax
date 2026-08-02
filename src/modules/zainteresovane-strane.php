@@ -251,6 +251,46 @@ $helpContent = getHelpContent($pdo, $pageSlug);
     </div>
 </div>
 
+<div class="modal-overlay" id="requirement-modal-overlay" onclick="closeRequirementModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <span class="modal-title" id="requirement-modal-title">Dodaj zahtev</span>
+            <button type="button" class="modal-close" onclick="closeRequirementModal()" aria-label="Zatvori">&times;</button>
+        </div>
+
+        <form method="post" id="requirement-modal-form">
+            <input type="hidden" name="action" value="add_requirement">
+            <input type="hidden" name="interested_party_id" id="requirement-modal-party-id" value="">
+
+            <div class="form-row">
+                <label for="modal_requirement">Zahtev</label>
+                <textarea name="requirement" id="modal_requirement" rows="3" required
+                    placeholder="npr. Klijenti očekuju da njihovi lični podaci budu zaštićeni od neovlašćenog pristupa."></textarea>
+            </div>
+
+            <div class="form-row form-row-inline">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="addressed_by_isms" id="modal_addressed_by_isms" value="1" checked>
+                    Pokriveno kroz ISMS
+                </label>
+            </div>
+
+            <div class="form-row">
+                <label for="modal_requirement_notes">Napomena (opciono)</label>
+                <input type="text" name="notes" id="modal_requirement_notes">
+            </div>
+
+            <div class="modal-actions modal-actions-split">
+                <button type="button" class="btn-secondary" onclick="openHelpFromRequirementModal()">Pomoć</button>
+                <div class="button-group">
+                    <button type="button" class="btn-secondary" onclick="closeRequirementModal()">Otkaži</button>
+                    <button type="submit" class="btn-primary">Sačuvaj</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
 <?php include __DIR__ . '/../includes/help-modal.php'; ?>
 
 <script>
@@ -281,9 +321,28 @@ function openHelpFromPartyModal() {
     openHelpModal();
 }
 
+function openAddRequirementModal(partyId, partyName) {
+    document.getElementById('requirement-modal-title').textContent = 'Dodaj zahtev — ' + partyName;
+    document.getElementById('requirement-modal-party-id').value = partyId;
+    document.getElementById('modal_requirement').value = '';
+    document.getElementById('modal_addressed_by_isms').checked = true;
+    document.getElementById('modal_requirement_notes').value = '';
+    document.getElementById('requirement-modal-overlay').classList.add('is-open');
+}
+
+function closeRequirementModal() {
+    document.getElementById('requirement-modal-overlay').classList.remove('is-open');
+}
+
+function openHelpFromRequirementModal() {
+    closeRequirementModal();
+    openHelpModal();
+}
+
 document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         closePartyModal();
+        closeRequirementModal();
     }
 });
 </script>
