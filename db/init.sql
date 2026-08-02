@@ -1057,6 +1057,114 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 
 
+-- db/init.sql
+--
+-- DOPUNA - demo nalog za podrazumevanu organizaciju "Moja firma" (id=1).
+-- Nalepiti na kraj postojećeg db/init.sql (posle prethodne RBAC dopune -
+-- roles/role_page_permissions moraju već postojati), PRE komentara
+-- "-- Kraj šeme".
+--
+-- Zašto je ovo uopšte potrebno: "Moja firma" (id=1) je nastala PRE RBAC
+-- sistema (INSERT na samom vrhu init.sql, iz ensureDefaultOrganization).
+-- Za SVAKU NOVU firmu koju super admin kreira preko ?page=organizacije,
+-- modules/organizacije.php automatski pravi "Administrator" rolu i
+-- prvog korisnika (videti ensureAdministratorRole() u config/auth.php) -
+-- ali "Moja firma" tu proceduru nikad nije prošla, pa nema ni rolu ni
+-- ijedan nalog. Ovaj blok ručno radi tačno isto što bi ta funkcija
+-- uradila, samo u čistom SQL-u.
+--
+-- Kreira:
+--   - "Administrator" rolu za organizaciju id=1, sa 'puno' pravom na
+--     SVAKU stranicu trenutno definisanu u config/menu.php (spisak
+--     slug-ova ispod mora ručno pratiti menu.php ako se on kasnije
+--     proširi - isto ograničenje kao i sam ensureAdministratorRole()
+--     pre nego što se pozove ponovo).
+--   - Jedan korisnički nalog:
+--
+--       Email:    demo
+--       Lozinka:  demo
+--
+-- NAPOMENA: "demo" kao email prolazi jer prijava.php ne proverava format
+-- email-a PRI PRIJAVI (samo filter_var(...FILTER_VALIDATE_EMAIL) postoji
+-- pri kreiranju NOVIH naloga kroz organizacije.php/korisnici.php) - ovaj
+-- red ide direktno u bazu, mimo te validacije, pa "demo" prolazi bez
+-- problema kao email pri samom loginUser() upitu.
+--
+-- BEZBEDNOST: demo/demo je namerno trivijalna lozinka - u redu za
+-- lokalni razvoj. Ako ova instalacija ikad postane dostupna van tvog
+-- računara (javni IP, deljen server, itd.), obavezno promeni ili
+-- obriši ovaj nalog:
+--
+--   UPDATE users SET is_active = FALSE WHERE email = 'demo';
+--
+-- Ceo blok je bezbedan za ponovno puštanje (sve INSERT IGNORE, oslanja
+-- se na postojeće UNIQUE ključeve) - za razliku od ALTER TABLE dela u
+-- prethodnoj RBAC dopuni.
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+INSERT IGNORE INTO organizations (id, name) VALUES (1, 'Moja firma');
+
+INSERT IGNORE INTO roles (organization_id, name, description, is_system)
+VALUES (1, 'Administrator', 'Podrazumevana rola - puno pravo na sve stranice. Ne može se obrisati.', TRUE);
+
+-- 'puno' pravo na svaku stranicu iz config/menu.php za tu rolu.
+INSERT IGNORE INTO role_page_permissions (role_id, page_slug, permission_level)
+SELECT r.id, slug_list.slug, 'puno'
+FROM roles r
+CROSS JOIN (
+    SELECT 'pregled-sistema'          AS slug UNION ALL
+    SELECT 'kontekst'                        UNION ALL
+    SELECT 'zainteresovane-strane'            UNION ALL
+    SELECT 'obim'                            UNION ALL
+    SELECT 'sredstva'                        UNION ALL
+    SELECT 'procena-rizika'                  UNION ALL
+    SELECT 'izjava-primenljivosti'           UNION ALL
+    SELECT 'ciljevi'                         UNION ALL
+    SELECT 'promene'                         UNION ALL
+    SELECT 'liderstvo'                       UNION ALL
+    SELECT 'politike'                        UNION ALL
+    SELECT 'zaposleni'                       UNION ALL
+    SELECT 'uloge'                           UNION ALL
+    SELECT 'resursi'                         UNION ALL
+    SELECT 'kompetentnost'                   UNION ALL
+    SELECT 'komunikacija'                    UNION ALL
+    SELECT 'dokumenti'                       UNION ALL
+    SELECT 'sistemi-pristup'                 UNION ALL
+    SELECT 'dobavljaci'                      UNION ALL
+    SELECT 'fizicka-bezbednost'              UNION ALL
+    SELECT 'incidenti'                       UNION ALL
+    SELECT 'kontinuitet-poslovanja'          UNION ALL
+    SELECT 'uskladjenost'                    UNION ALL
+    SELECT 'pokazatelji'                     UNION ALL
+    SELECT 'interni-audit'                   UNION ALL
+    SELECT 'pregled-menadzmenta'             UNION ALL
+    SELECT 'unapredjenje'                    UNION ALL
+    SELECT 'korektivne-mere'                 UNION ALL
+    SELECT 'pomoc-uredjivanje'               UNION ALL
+    SELECT 'korisnici'                       UNION ALL
+    SELECT 'role-pristup'
+) AS slug_list
+WHERE r.organization_id = 1 AND r.name = 'Administrator';
+
+-- Demo nalog - heš je bcrypt za lozinku "demo" (isti format kao PHP-ov
+-- password_hash()/password_verify(), videti napomenu u prethodnoj RBAC
+-- dopuni za detalje kompatibilnosti $2b$/$2y$ prefiksa).
+INSERT IGNORE INTO users (organization_id, role_id, email, password_hash, is_active, is_super_admin)
+VALUES (
+    1,
+    (SELECT id FROM roles WHERE organization_id = 1 AND name = 'Administrator'),
+    'demo',
+    '$2b$12$TTs4CoAiFYcbT5/rIBu6GObxTaQOTTgZF9Ol0GmIrgiI1KplzhTHy',
+    TRUE,
+    FALSE
+);
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+
+
+
 
 INSERT IGNORE INTO help_content (page_slug, title, body) VALUES
 (
